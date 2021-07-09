@@ -6,12 +6,3 @@ services:
       - 8080:80
     volumes:
       - .:/app
-
-  redis:
-    image: redis:3.2
-    volumes:
-      - tmetric-redis:/data
-
-volumes:
-  tmetric-redis:
-    driver: local
