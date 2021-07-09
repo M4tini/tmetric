@@ -4,6 +4,7 @@
     "ext-redis": "*",
     "guzzlehttp/guzzle": "^7.3",
     "knplabs/github-api": "^3.3",
-    "cache/redis-adapter": "^1.1"
+    "cache/redis-adapter": "^1.1",
+    "vlucas/phpdotenv": "^5.3"
   }
 }
