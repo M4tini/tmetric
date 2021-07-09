@@ -243,7 +243,7 @@ if (isset($_POST['action'])) {
                 $commits = new Github\Api\Repository\Commits($client);
 
                 try {
-                    $tests = $commits->all($_ENV['GITHUB_ORGANIZATION'], $repository, [
+                    $commitList = $commits->all($_ENV['GITHUB_ORGANIZATION'], $repository, [
                         'author'   => $_POST['user'],
                         'per_page' => 100, // max 100
                         'page'     => 1,
@@ -255,13 +255,13 @@ if (isset($_POST['action'])) {
                     continue;
                 }
 
-                if (empty($tests)) {
+                if (empty($commitList)) {
                     continue;
                 }
 
-                foreach ($tests as $test) {
-                    $message = $test['commit']['message'];
-                    $date = DateTime::createFromFormat(DateTimeInterface::ISO8601, $test['commit']['author']['date']);
+                foreach ($commitList as $commit) {
+                    $message = $commit['commit']['message'];
+                    $date = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['author']['date']);
                     $projectOptions = [];
                     $projects = [
                         271216 => 'API',
@@ -274,14 +274,23 @@ if (isset($_POST['action'])) {
                         461356 => 'Analytics',
                     ];
                     foreach ($projects as $projectId => $projectName) {
-                        $projectOptions[] = '<option value="' . $projectId . '">' . $projectName . '</option>';
+                        $selected = '';
+                        if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
+                            $selected = ' selected="selected"';
+                        }
+                        if (str_contains($repository, 'app') && $projectName === 'Contract Module') {
+                            $selected = ' selected="selected"';
+                        }
+                        $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
                     }
 
                     if (str_contains($message, 'Merge pull request') || str_contains($message, 'Merge branch')) {
                         continue;
                     }
-                    $res[] = '<td>' . implode('</td><td>', [
-                            $test['commit']['author']['name'],
+                    $startHour = $date->format('H');
+                    $sortKey = $date->format('YmdHi') . $repository . $message;
+                    $res[$sortKey] = '<td>' . implode('</td><td>', [
+                            $commit['commit']['author']['name'],
                             $repository,
                             $date->format('Y-m-d'),
                             $date->format('H:i'),
@@ -289,14 +298,15 @@ if (isset($_POST['action'])) {
                             '<form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" style="width:500px;"><br>
                             <input type="date" name="date" value="' . $date->format('Y-m-d') . '">
-                            <input type="time" name="start" value="10:00" required>
-                            <input type="time" name="end" value="11:00" required>
+                            <input type="time" name="start" value="' . $startHour . ':00" required>
+                            <input type="time" name="end" value="' . ++$startHour . ':00" required>
                             <select name="project" required>' . implode('', $projectOptions) . '</select>
                             <button type="submit">log</button>
                         </form>',
                         ]) . '</td>';
                 }
             }
+            ksort($res);
 
             echo '<h2>GitHub</h2><table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
 
