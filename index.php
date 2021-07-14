@@ -73,17 +73,21 @@ foreach ($actions as $action) {
     $selected = (isset($_POST['action']) && $_POST['action'] === $action) ? ' selected="selected"' : '';
     echo '<option value="' . $action . '"' . $selected . '>' . $action . '</option>';
 }
+$dateFrom = $_POST['date_from'] ?? date('Y-m-d');
+$dateTo = $_POST['date_to'] ?? date('Y-m-d');
+$weekend = in_array(DateTime::createFromFormat('Y-m-d', $dateFrom)->format('l'), ['Saturday', 'Sunday']);
+$style = ($weekend) ? ' style="background:#faa"' : '';
 
 echo '
           </select>
         </td>
-        <td>
+        <td' . $style . '>
           Date from:<br>
-          <input type="date" name="date_from" value="' . ($_POST['date_from'] ?? date('Y-m-d')) . '"/>
+          <input type="date" name="date_from" value="' . $dateFrom . '"/>
         </td>
-        <td>
+        <td' . $style . '>
           Date to:<br>
-          <input type="date" name="date_to" value="' . ($_POST['date_to'] ?? date('Y-m-d')) . '"/>
+          <input type="date" name="date_to" value="' . $dateTo . '"/>
         </td>
         <td style="text-align:center;">
           <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()">&lt;</a>
@@ -285,10 +289,13 @@ if (isset($_POST['action'])) {
                         if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
                             $selected = ' selected="selected"';
                         }
-                        if (str_contains($repository, 'app') && $projectName === 'Contract Module') {
+                        if (str_contains($repository, 'app') || str_contains($repository, 'backoffice') && $projectName === 'Contract Module') {
                             $selected = ' selected="selected"';
                         }
                         if (str_contains($repository, 'infrastructure') && $projectName === 'Performance') {
+                            $selected = ' selected="selected"';
+                        }
+                        if (str_contains(strtolower($message), 'queue') && $projectName === 'Performance') {
                             $selected = ' selected="selected"';
                         }
                         $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
