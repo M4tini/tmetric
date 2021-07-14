@@ -299,7 +299,7 @@ if (isset($_POST['action'])) {
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" style="width:500px;"><br>
                             <input type="date" name="date" value="' . $date->format('Y-m-d') . '">
                             <input type="time" name="start" value="' . $startHour . ':00" required>
-                            <input type="time" name="end" value="' . ++$startHour . ':00" required>
+                            <input type="time" name="end" value="' . (++$startHour < 10 ? '0' : '') . $startHour . ':00" required>
                             <select name="project" required>' . implode('', $projectOptions) . '</select>
                             <button type="submit">log</button>
                         </form>',

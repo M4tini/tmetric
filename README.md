@@ -10,13 +10,16 @@ docker-compose run --rm tmetric composer install --working-dir=/app
 
 ## Usage
 
+Run the below command and visit: http://localhost:8080
+
 ```shell
 docker-compose up -d
 ```
 
-Visit: http://localhost:8080
-
 ## Configuration
+
+Your public contributions are not visible through the GitHub GraphQL API, used to retrieve repository contributions.
+You need to allow this by activating `Private contributions` in the `Contribution settings` on your GitHub profile page.
 
 The `.env` file needs some values to work correctly.
 
@@ -42,5 +45,5 @@ Generate a Team Summary report, click on your user and copy the values from the 
 ## References
 
 - https://docs.github.com/en/rest
-- https://tmetric.com/help/data-integrations/how-to-use-tmetric-rest-api
 - https://app.tmetric.com/help/index.html
+- https://tmetric.com/help/data-integrations/how-to-use-tmetric-rest-api
