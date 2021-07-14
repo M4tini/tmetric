@@ -12,11 +12,18 @@ echo '
         * {
           font-family: sans-serif;
         }
+        body {
+          background: #fafafa;
+        }
+        button {
+          height: 40px;
+          padding: 0 8px;
+        }
         table {
           border-collapse: collapse;
         }
         td {
-          border: 1px solid #000;
+          border: 1px solid #444;
           padding: 4px 8px;
         }
     </style>
@@ -86,10 +93,10 @@ echo '
           <a href="#" onclick="modifyDate(\'date_from\', 7);modifyDate(\'date_to\', 7);document.forms[0].submit()">&gt;&gt;</a>
         </td>
         <td>
-          <input type="submit" value="search">
+          <button type="submit">search</button>
         </td>
         <td>
-          <a href="/">reset</a>
+          <a href="/" onclick="return window.confirm(\'okok?\')">reset</a>
         </td>
     </tr>
     </table>
@@ -236,6 +243,16 @@ if (isset($_POST['action'])) {
             foreach ($results['data']['user']['contributionsCollection']['commitContributionsByRepository'] as $contribution) {
                 $repositories[] = $contribution['repository']['name'];
             }
+            $projects = [
+                271216 => 'API',
+                271222 => 'Microservices',
+                271224 => 'Contract Module',
+                271225 => 'Automation Rules',
+                271226 => 'Performance',
+                461354 => 'Shipment collections',
+                461355 => 'Rate management',
+                461356 => 'Analytics',
+            ];
 
             $res = [];
 
@@ -263,22 +280,15 @@ if (isset($_POST['action'])) {
                     $message = $commit['commit']['message'];
                     $date = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['author']['date']);
                     $projectOptions = [];
-                    $projects = [
-                        271216 => 'API',
-                        271222 => 'Microservices',
-                        271224 => 'Contract Module',
-                        271225 => 'Automation Rules',
-                        271226 => 'Performance',
-                        461354 => 'Shipment collections',
-                        461355 => 'Rate management',
-                        461356 => 'Analytics',
-                    ];
                     foreach ($projects as $projectId => $projectName) {
                         $selected = '';
                         if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
                             $selected = ' selected="selected"';
                         }
                         if (str_contains($repository, 'app') && $projectName === 'Contract Module') {
+                            $selected = ' selected="selected"';
+                        }
+                        if (str_contains($repository, 'infrastructure') && $projectName === 'Performance') {
                             $selected = ' selected="selected"';
                         }
                         $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
@@ -289,21 +299,25 @@ if (isset($_POST['action'])) {
                     }
                     $startHour = $date->format('H');
                     $sortKey = $date->format('YmdHi') . $repository . $message;
-                    $res[$sortKey] = '<td>' . implode('</td><td>', [
+                    $res[$sortKey] = '
+                        <form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
+                            <td>' . implode('</td><td>', [
                             $commit['commit']['author']['name'],
                             $repository,
                             $date->format('Y-m-d'),
                             $date->format('H:i'),
                             $message,
-                            '<form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
-                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" style="width:500px;"><br>
-                            <input type="date" name="date" value="' . $date->format('Y-m-d') . '">
+                            '
+                            <input type="hidden" name="action" value="post">
+                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" style="width:100%;" required><br>
+                            <input type="date" name="date" value="' . $date->format('Y-m-d') . '" required>
                             <input type="time" name="start" value="' . $startHour . ':00" required>
                             <input type="time" name="end" value="' . (++$startHour < 10 ? '0' : '') . $startHour . ':00" required>
-                            <select name="project" required>' . implode('', $projectOptions) . '</select>
-                            <button type="submit">log</button>
-                        </form>',
-                        ]) . '</td>';
+                            <select name="project" required>' . implode('', $projectOptions) . '</select>',
+                            '
+                            <button type="submit">log</button>',
+                        ]) . '</td>
+                        </form>';
                 }
             }
             ksort($res);
@@ -332,14 +346,47 @@ if (isset($_POST['action'])) {
                 $end = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['endTime'] . 'Z');
                 $diff = $start->diff($end);
                 $totalDiff->add($diff);
+                $projectOptions = [];
+                foreach ($projects as $projectId => $projectName) {
+                    $selected = '';
+                    if ($timeEntry['project']['id'] === $projectId) {
+                        $selected = ' selected="selected"';
+                    }
+                    $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
+                }
 
-                $res[] = '<td>' . implode('</td><td>', [
+                $sortKey = $start->format('YmdHi');
+                $res[$sortKey] = '
+                    <form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
+                        <td>' . implode('</td><td>', [
                         $start->format('Y-m-d'),
+                        $start->format('H:i') . ' - ' . $end->format('H:i'),
                         $diff->format('%h h %i m'),
                         $timeEntry['project']['name'],
                         $timeEntry['note'],
-                    ]) . '</td>';
+                        '
+                        <input type="hidden" name="action" value="put">
+                        <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
+                        <input type="text" name="note" value="' . $timeEntry['note'] . '" style="width:100%;" required><br>
+                        <input type="date" name="date" value="' . $start->format('Y-m-d') . '" required>
+                        <input type="time" name="start" value="' . $start->format('H:i') . '" required>
+                        <input type="time" name="end" value="' . $end->format('H:i') . '" required>
+                        <select name="project" required>' . implode('', $projectOptions) . '</select>',
+                        '
+                        <button type="submit">edit</button>',
+                    ]) . '</td>
+                    </form>
+                    
+                    <form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
+                        <input type="hidden" name="date" value="' . $start->format('Y-m-d') . '">
+                        <input type="hidden" name="start" value="' . $start->format('H:i') . '">
+                        <input type="hidden" name="end" value="' . $end->format('H:i') . '">
+                        <td><button type="submit" onclick="return window.confirm(\'okok?\')">x</button></td>
+                    </form>';
             }
+            ksort($res);
 
             echo '<h2>TMetric (' . $totalDiff->format('G \h i \m') . ')</h2><table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
             break;
