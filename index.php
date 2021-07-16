@@ -23,6 +23,7 @@ echo '
           border-collapse: collapse;
         }
         td {
+          height: 28px;
           border: 1px solid #444;
           padding: 4px 8px;
         }
@@ -60,6 +61,7 @@ echo '
 
 $actions = [
     'sync',
+    'report',
     'github-user',
     'github-organization',
     'github-repositories',
@@ -112,17 +114,17 @@ if (isset($_POST['action'])) {
     $client->authenticate($_ENV['GITHUB_TOKEN'], null, Github\Client::AUTH_ACCESS_TOKEN);
 
     switch ($_POST['action']) {
-        case 'github-user';
+        case 'github-user':
             $user = new Github\Api\User($client);
             var_dump($user->show($_POST['user']));
             break;
 
-        case 'github-organization';
+        case 'github-organization':
             $organizations = new Github\Api\Organization($client);
             var_dump($organizations->show($_ENV['GITHUB_ORGANIZATION']));
             break;
 
-        case 'github-repositories';
+        case 'github-repositories':
             $repositories = new Github\Api\Repo($client);
             var_dump($repositories->org($_ENV['GITHUB_ORGANIZATION'], [
                 'sort'     => 'full_name',
@@ -131,7 +133,7 @@ if (isset($_POST['action'])) {
             ]));
             break;
 
-        case 'github-commits';
+        case 'github-commits':
             $commits = new Github\Api\Repository\Commits($client);
             var_dump('Hardcoded repository: api');
             var_dump($commits->all($_ENV['GITHUB_ORGANIZATION'], 'api', [
@@ -143,7 +145,7 @@ if (isset($_POST['action'])) {
             ]));
             break;
 
-        case 'github-contributions';
+        case 'github-contributions':
             $graphQL = new Github\Api\GraphQL($client);
             $results = $graphQL->execute('{
   user(
@@ -169,7 +171,7 @@ if (isset($_POST['action'])) {
             var_dump($results['data']['user']['contributionsCollection']['commitContributionsByRepository']);
             break;
 
-        case 'tmetric-users';
+        case 'tmetric-users':
             var_dump([
                 128000 => 'Yoan-Alexander Grigorov',
                 128919 => 'Nick de Vries',
@@ -178,7 +180,7 @@ if (isset($_POST['action'])) {
             ]);
             break;
 
-        case 'tmetric-projects';
+        case 'tmetric-projects':
             $httpClient = new GuzzleHttp\Client([
                 'base_uri' => 'https://app.tmetric.com',
             ]);
@@ -201,7 +203,7 @@ if (isset($_POST['action'])) {
             var_dump($res);
             break;
 
-        case 'tmetric-time-entries';
+        case 'tmetric-time-entries':
             $httpClient = new GuzzleHttp\Client([
                 'base_uri' => 'https://app.tmetric.com',
             ]);
@@ -361,6 +363,7 @@ if (isset($_POST['action'])) {
                     }
                     $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
                 }
+                $note = $timeEntry['note'] ?? $timeEntry['task']['name'];
 
                 $sortKey = $start->format('YmdHi');
                 $res[$sortKey] = '
@@ -370,11 +373,11 @@ if (isset($_POST['action'])) {
                         $start->format('H:i') . ' - ' . $end->format('H:i'),
                         $diff->format('%h h %i m'),
                         $timeEntry['project']['name'],
-                        $timeEntry['note'],
+                        $note,
                         '
                         <input type="hidden" name="action" value="put">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
-                        <input type="text" name="note" value="' . $timeEntry['note'] . '" style="width:100%;" required><br>
+                        <input type="text" name="note" value="' . $note . '" style="width:100%;" required><br>
                         <input type="date" name="date" value="' . $start->format('Y-m-d') . '" required>
                         <input type="time" name="start" value="' . $start->format('H:i') . '" required>
                         <input type="time" name="end" value="' . $end->format('H:i') . '" required>
@@ -396,6 +399,116 @@ if (isset($_POST['action'])) {
             ksort($res);
 
             echo '<h2>TMetric (' . $totalDiff->format('G \h i \m') . ')</h2><table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
+            break;
+
+        case 'report':
+            $httpClient = new GuzzleHttp\Client([
+                'base_uri' => 'https://app.tmetric.com',
+            ]);
+            $users = [
+                128921 => 'Martin Boer',
+                128919 => 'Nick de Vries',
+                128000 => 'Yoan-Alexander Grigorov',
+                217331 => 'Nick Zwaans',
+            ];
+            $projects = [
+                271216 => 'API',
+                271222 => 'Microservices',
+                271224 => 'Contract Module',
+                271225 => 'Automation Rules',
+                271226 => 'Performance',
+                461354 => 'Shipment collections',
+                461355 => 'Rate management',
+                461356 => 'Analytics',
+            ];
+
+            $dateFrom = DateTime::createFromFormat('Y-m-d', $_POST['date_from']);
+            $dateTo = DateTime::createFromFormat('Y-m-d', $_POST['date_to']);
+            $tables[0] = '<table style="float:left"><tr><td></td><td></td></tr><tr><td>datum</td><td>dag</td></tr>';
+            do {
+                $weekend = in_array($dateFrom->format('l'), ['Saturday', 'Sunday']);
+                $style = ($weekend) ? ' style="background:#faa"' : '';
+                $cols = [
+                    $dateFrom->format('d/m'),
+                    $dateFrom->format('D'),
+                ];
+
+                $tables[0] .= '<tr' . $style . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
+
+                $dateFrom->modify('+1 day');
+            } while ($dateFrom->format('Ymd') <= $dateTo->format('Ymd'));
+            $tables[0] .= '</table>';
+
+            foreach ($users as $userId => $username) {
+                $tables[$userId] = '<table style="float:left">';
+
+                $response = $httpClient->get('/api/v3/accounts/' . $_ENV['TMETRIC_WORKSPACE_ID'] . '/timeentries?' . http_build_query([
+                        'startDate' => $_POST['date_from'] . 'T00:00:00',
+                        'endDate'   => $_POST['date_to'] . 'T23:59:59',
+                        'userId'    => $userId,
+                    ]), [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $_ENV['TMETRIC_TOKEN'],
+                    ],
+                ]);
+                $timeEntries = json_decode((string) $response->getBody(), true);
+
+                $dateEntries = [];
+                foreach ($timeEntries as $timeEntry) {
+                    $date = substr($timeEntry['startTime'], 0, 10);
+
+                    if (!isset ($timeEntry['project'])) {
+                        echo '<h2 style="color:red;">Missing project for time entry of <strong>' . $username . '</strong> on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
+                    }
+
+                    $project = $timeEntry['project']['id'];
+                    $dateEntries[$date][$project][] = $timeEntry;
+                }
+
+                $tables[$userId] .= '<tr><td colspan="' . count($projects) . '">' . $username . '</td></tr>';
+                $tables[$userId] .= '<tr>';
+                foreach (array_values($projects) as $key => $projectName) {
+                    $tables[$userId] .= '<td>P' . ($key + 1) . '</td>';
+                }
+                $tables[$userId] .= '</tr>';
+
+                $dateFrom = DateTime::createFromFormat('Y-m-d', $_POST['date_from']);
+                $dateTo = DateTime::createFromFormat('Y-m-d', $_POST['date_to']);
+                do {
+                    $weekend = in_array($dateFrom->format('l'), ['Saturday', 'Sunday']);
+                    $style = ($weekend) ? ' style="background:#faa"' : '';
+                    $cols = [];
+
+                    foreach ($projects as $projectId => $projectName) {
+                        $totalDiff = (new DateTime())->setTime(0, 0, 0);
+                        $startDiff = $totalDiff->getTimestamp();
+
+                        if (isset($dateEntries[$dateFrom->format('Y-m-d')][$projectId])) {
+                            foreach ($dateEntries[$dateFrom->format('Y-m-d')][$projectId] as $timeEntry) {
+                                $start = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['startTime'] . 'Z');
+                                $end = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['endTime'] . 'Z');
+                                $diff = $start->diff($end);
+                                $totalDiff->add($diff);
+                            }
+                        }
+                        $endDiff = $totalDiff->getTimestamp();
+                        $seconds = $endDiff - $startDiff;
+                        $hours = $seconds / 60 / 60;
+                        $hoursPer15m = ceil($hours * 4) / 4;
+
+                        $cols[] = $seconds ? '<span title="' . number_format($hours, 2, '.', '') . '">' . number_format($hoursPer15m, 2, '.', '') . '</span>' : '';
+                    }
+
+                    $tables[$userId] .= '<tr' . $style . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
+
+                    $dateFrom->modify('+1 day');
+                } while ($dateFrom->format('Ymd') <= $dateTo->format('Ymd'));
+
+                $tables[$userId] .= '</table>';
+            }
+
+            echo implode('', $tables);
+
             break;
     }
 }
