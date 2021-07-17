@@ -13,7 +13,6 @@ class Config
     public DateTime $dateTo;
     public string $github_token;
     public string $github_organization;
-    public string $github_organization_node_id;
     public string $github_user;
     public string $tmetric_token;
     public string $tmetric_user_id;
@@ -30,7 +29,6 @@ class Config
 
         $this->github_token = $_ENV['GITHUB_TOKEN'];
         $this->github_organization = $_ENV['GITHUB_ORGANIZATION'];
-        $this->github_organization_node_id = $_ENV['GITHUB_ORGANIZATION_NODE_ID']; // TODO: cache from GitHub response.
         $this->github_user = $_POST['github_user'] ?? $_GET['github_user'] ?? $_ENV['GITHUB_USER'];
 
         $this->tmetric_token = $_ENV['TMETRIC_TOKEN'];
@@ -40,6 +38,9 @@ class Config
 
     public function getContributionsQuery(): string
     {
+        $organizations = new Github\Api\Organization($this->getGithubClient());
+        $organization = $organizations->show($this->github_organization);
+
         return <<<GRAPHQL
 {
   user(
@@ -48,7 +49,7 @@ class Config
     contributionsCollection(
       from: "{$this->date_from}T00:00:00",
       to: "{$this->date_to}T23:59:59",
-      organizationID: "{$this->github_organization_node_id}"
+      organizationID: "{$organization['node_id']}"
     ) {
       commitContributionsByRepository(
         maxRepositories: 100
