@@ -31,7 +31,7 @@ class Config
         $this->github_token = $_ENV['GITHUB_TOKEN'];
         $this->github_organization = $_ENV['GITHUB_ORGANIZATION'];
         $this->github_organization_node_id = $_ENV['GITHUB_ORGANIZATION_NODE_ID']; // TODO: cache from GitHub response.
-        $this->github_user = $_POST['user'] ?? $_GET['user'] ?? $_ENV['GITHUB_USER'];
+        $this->github_user = $_POST['github_user'] ?? $_GET['github_user'] ?? $_ENV['GITHUB_USER'];
 
         $this->tmetric_token = $_ENV['TMETRIC_TOKEN'];
         $this->tmetric_user_id = $_ENV['TMETRIC_USER_ID'];
@@ -82,5 +82,34 @@ GRAPHQL;
                 'Authorization' => 'Bearer ' . $this->tmetric_token,
             ],
         ]);
+    }
+
+    public function getTMetricProjects(): array
+    {
+        return [
+            271216 => 'API',
+            271222 => 'Microservices',
+            271224 => 'Contract Module',
+            271225 => 'Automation Rules',
+            271226 => 'Performance',
+            461354 => 'Shipment collections',
+            461355 => 'Rate management',
+            461356 => 'Analytics',
+        ];
+    }
+
+    public function getTMetricUsers(): array
+    {
+        return [
+            128921 => 'Martin Boer',
+            128919 => 'Nick de Vries',
+            128000 => 'Yoan-Alexander Grigorov',
+            217331 => 'Nick Zwaans',
+        ];
+    }
+
+    public function isWeekend(DateTime $dateTime): bool
+    {
+        return in_array($dateTime->format('l'), ['Saturday', 'Sunday']);
     }
 }
