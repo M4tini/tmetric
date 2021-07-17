@@ -5,57 +5,28 @@ require_once __DIR__ . '/config.php';
 $config = new Config();
 
 echo '
+<!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
+    <meta charset="UTF-8">
     <title>EZ TMetric</title>
-    <style>
-        * {
-          font-family: sans-serif;
-        }
-        body {
-          background: #fafafa;
-        }
-        button {
-          height: 40px;
-          padding: 0 8px;
-        }
-        table {
-          border-collapse: collapse;
-        }
-        td {
-          height: 28px;
-          border: 1px solid #444;
-          padding: 4px 8px;
-        }
-    </style>
-    <script>
-        function modifyDate(name, addDays = 1) {
-          const dateFrom = document.getElementsByName(name)[0]
-          const date = new Date(dateFrom.value)
-          date.setDate(date.getDate() + addDays);
-
-          dateFrom.value = [
-            date.getFullYear(),
-            ("0" + (date.getMonth() + 1)).substr(-2),
-            ("0" + (date.getDate())).substr(-2)
-          ].join("-")
-        }
-    </script>
-</head>
-<body>
+    <link rel="stylesheet" href="/assets/tmetric.css">
+    <script src="/assets/tmetric.js"></script>
+  </head>
+  <body>
     <form action="/" method="post">
     <table>
-    <tr>
+      <tr>
         <td>
-          GitHub organization:<br>
+          GitHub organization<br>
           <input type="text" name="github_organization" value="' . $config->github_organization . '" disabled/>
         </td>
         <td>
-          GitHub user:<br>
-          <input type="text" name="user" value="' . $config->github_user . '"/>
+          GitHub user<br>
+          <input type="text" name="github_user" value="' . $config->github_user . '"/>
         </td>
         <td>
-          Action:<br>
+          Action<br>
           <select name="action">
 ';
 
@@ -71,21 +42,20 @@ $actions = [
     'tmetric-time-entries',
 ];
 foreach ($actions as $action) {
-    $selected = ($config->action === $action) ? ' selected="selected"' : '';
-    echo '<option value="' . $action . '"' . $selected . '>' . $action . '</option>';
+    $selected = ($config->action === $action) ? 'selected="selected"' : '';
+    echo '<option value="' . $action . '" ' . $selected . '>' . $action . '</option>';
 }
-$isWeekend = in_array($config->dateFrom->format('l'), ['Saturday', 'Sunday']);
-$style = $isWeekend ? ' style="background:#faa"' : '';
+$class = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
 
 echo '
           </select>
         </td>
-        <td' . $style . '>
-          Date from:<br>
+        <td' . $class . '>
+          Date from<br>
           <input type="date" name="date_from" value="' . $config->date_from . '"/>
         </td>
-        <td' . $style . '>
-          Date to:<br>
+        <td' . $class . '>
+          Date to<br>
           <input type="date" name="date_to" value="' . $config->date_to . '"/>
         </td>
         <td style="text-align:center;">
@@ -101,7 +71,7 @@ echo '
         <td>
           <a href="/" onclick="return window.confirm(\'okok?\')">reset</a>
         </td>
-    </tr>
+      </tr>
     </table>
     </form>
 ';
@@ -149,15 +119,7 @@ switch ($config->action) {
                 'userId' => $config->tmetric_user_id,
             ]));
         $projects = json_decode((string) $response->getBody(), true);
-
-        $res = [];
-        foreach ($projects as $project) {
-            if ($project['status'] !== 'active') {
-                continue;
-            }
-            $res[$project['id']] = $project['name'];
-        }
-        var_dump($res);
+        var_dump($projects);
         break;
 
     case 'tmetric-time-entries':
@@ -167,7 +129,6 @@ switch ($config->action) {
                 'userId'    => $config->tmetric_user_id,
             ]));
         $timeEntries = json_decode((string) $response->getBody(), true);
-
         var_dump($timeEntries);
         break;
 
@@ -184,16 +145,7 @@ switch ($config->action) {
         foreach ($results['data']['user']['contributionsCollection']['commitContributionsByRepository'] as $contribution) {
             $repositories[] = $contribution['repository']['name'];
         }
-        $projects = [
-            271216 => 'API',
-            271222 => 'Microservices',
-            271224 => 'Contract Module',
-            271225 => 'Automation Rules',
-            271226 => 'Performance',
-            461354 => 'Shipment collections',
-            461355 => 'Rate management',
-            461356 => 'Analytics',
-        ];
+        $projects = $config->getTMetricProjects();
 
         $res = [];
         foreach ($repositories as $repository) {
@@ -223,18 +175,18 @@ switch ($config->action) {
                 foreach ($projects as $projectId => $projectName) {
                     $selected = '';
                     if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
-                        $selected = ' selected="selected"';
+                        $selected = 'selected="selected"';
                     }
                     if (str_contains($repository, 'app') || str_contains($repository, 'backoffice') && $projectName === 'Contract Module') {
-                        $selected = ' selected="selected"';
+                        $selected = 'selected="selected"';
                     }
                     if (str_contains($repository, 'infrastructure') && $projectName === 'Performance') {
-                        $selected = ' selected="selected"';
+                        $selected = 'selected="selected"';
                     }
                     if (str_contains(strtolower($message), 'queue') && $projectName === 'Performance') {
-                        $selected = ' selected="selected"';
+                        $selected = 'selected="selected"';
                     }
-                    $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
+                    $projectOptions[] = '<option value="' . $projectId . '" ' . $selected . '>' . $projectName . '</option>';
                 }
 
                 if (str_contains($message, 'Merge pull request') || str_contains($message, 'Merge branch')) {
@@ -252,7 +204,7 @@ switch ($config->action) {
                         $message,
                         '
                             <input type="hidden" name="action" value="post">
-                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" style="width:100%;" required><br>
+                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
                             <input type="date" name="date" value="' . $date->format('Y-m-d') . '" required>
                             <input type="time" name="start" value="' . $startHour . ':00" required>
                             <input type="time" name="end" value="' . (++$startHour < 10 ? '0' : '') . $startHour . ':00" required>
@@ -286,9 +238,9 @@ switch ($config->action) {
             foreach ($projects as $projectId => $projectName) {
                 $selected = '';
                 if ($timeEntry['project']['id'] === $projectId) {
-                    $selected = ' selected="selected"';
+                    $selected = 'selected="selected"';
                 }
-                $projectOptions[] = '<option value="' . $projectId . '"' . $selected . '>' . $projectName . '</option>';
+                $projectOptions[] = '<option value="' . $projectId . '" ' . $selected . '>' . $projectName . '</option>';
             }
             $note = $timeEntry['note'] ?? $timeEntry['task']['name'];
 
@@ -304,7 +256,7 @@ switch ($config->action) {
                     '
                         <input type="hidden" name="action" value="put">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
-                        <input type="text" name="note" value="' . $note . '" style="width:100%;" required><br>
+                        <input type="text" name="note" value="' . $note . '" required><br>
                         <input type="date" name="date" value="' . $start->format('Y-m-d') . '" required>
                         <input type="time" name="start" value="' . $start->format('H:i') . '" required>
                         <input type="time" name="end" value="' . $end->format('H:i') . '" required>
@@ -329,39 +281,23 @@ switch ($config->action) {
         break;
 
     case 'report':
-        $users = [
-            128921 => 'Martin Boer',
-            128919 => 'Nick de Vries',
-            128000 => 'Yoan-Alexander Grigorov',
-            217331 => 'Nick Zwaans',
-        ];
-        $projects = [
-            271216 => 'API',
-            271222 => 'Microservices',
-            271224 => 'Contract Module',
-            271225 => 'Automation Rules',
-            271226 => 'Performance',
-            461354 => 'Shipment collections',
-            461355 => 'Rate management',
-            461356 => 'Analytics',
-        ];
+        $projects = $config->getTMetricProjects();
 
-        $tables[0] = '<table style="float:left"><tr><td></td><td></td></tr><tr><td>datum</td><td>dag</td></tr>';
+        $tables[0] = '<table style="float:left"><tr><td></td><td></td></tr><tr><td></td><td></td></tr>';
         do {
-            $weekend = in_array($config->dateFrom->format('l'), ['Saturday', 'Sunday']);
-            $style = ($weekend) ? ' style="background:#faa"' : '';
+            $class = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
             $cols = [
                 $config->dateFrom->format('d/m'),
                 $config->dateFrom->format('D'),
             ];
 
-            $tables[0] .= '<tr' . $style . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
+            $tables[0] .= '<tr' . $class . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
 
             $config->dateFrom->modify('+1 day');
         } while ($config->dateFrom->format('Ymd') <= $config->dateTo->format('Ymd'));
         $tables[0] .= '</table>';
 
-        foreach ($users as $userId => $username) {
+        foreach ($config->getTMetricUsers() as $userId => $username) {
             $tables[$userId] = '<table style="float:left">';
 
             $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
@@ -383,18 +319,17 @@ switch ($config->action) {
                 $dateEntries[$date][$project][] = $timeEntry;
             }
 
-            $tables[$userId] .= '<tr><td colspan="' . count($projects) . '">' . $username . '</td></tr>';
-            $tables[$userId] .= '<tr>';
+            $tables[$userId] .= '<tr class="center"><td colspan="' . count($projects) . '">' . $username . '</td></tr>';
+            $tables[$userId] .= '<tr class="center">';
             foreach (array_values($projects) as $key => $projectName) {
-                $tables[$userId] .= '<td>P' . ($key + 1) . '</td>';
+                $tables[$userId] .= '<td title="' . $projectName . '">P' . ($key + 1) . '</td>';
             }
             $tables[$userId] .= '</tr>';
 
             $dateFrom = DateTime::createFromFormat('Y-m-d', $config->date_from);
             $dateTo = DateTime::createFromFormat('Y-m-d', $config->date_to);
             do {
-                $weekend = in_array($dateFrom->format('l'), ['Saturday', 'Sunday']);
-                $style = ($weekend) ? ' style="background:#faa"' : '';
+                $class = $config->isWeekend($dateFrom) ? ' class="weekend"' : '';
                 $cols = [];
 
                 foreach ($projects as $projectId => $projectName) {
@@ -412,12 +347,12 @@ switch ($config->action) {
                     $endDiff = $totalDiff->getTimestamp();
                     $seconds = $endDiff - $startDiff;
                     $hours = $seconds / 60 / 60;
-                    $hoursPer15m = ceil($hours * 4) / 4;
+                    $hoursPer15m = ceil(($hours - 0.125) * 4) / 4;
 
                     $cols[] = $seconds ? '<span title="' . number_format($hours, 2, '.', '') . '">' . number_format($hoursPer15m, 2, '.', '') . '</span>' : '';
                 }
 
-                $tables[$userId] .= '<tr' . $style . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
+                $tables[$userId] .= '<tr' . $class . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
 
                 $dateFrom->modify('+1 day');
             } while ($dateFrom->format('Ymd') <= $dateTo->format('Ymd'));
@@ -426,11 +361,10 @@ switch ($config->action) {
         }
 
         echo implode('', $tables);
-
         break;
 }
 
 echo '
-</body>
+  </body>
 </html>
 ';
