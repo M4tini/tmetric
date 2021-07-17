@@ -9,7 +9,11 @@ class Config
     public string $action;
     public string $date_from;
     public string $date_to;
+    public DateTime $dateFrom;
+    public DateTime $dateTo;
+    public string $github_token;
     public string $github_organization;
+    public string $github_organization_node_id;
     public string $github_user;
     public string $tmetric_token;
     public string $tmetric_user_id;
@@ -25,7 +29,8 @@ class Config
         $this->dateTo = DateTime::createFromFormat('Y-m-d', $this->date_to);
 
         $this->github_token = $_ENV['GITHUB_TOKEN'];
-        $this->github_organization = $_POST['github_organization'] ?? $_GET['github_organization'] ?? $_ENV['GITHUB_ORGANIZATION'];
+        $this->github_organization = $_ENV['GITHUB_ORGANIZATION'];
+        $this->github_organization_node_id = $_ENV['GITHUB_ORGANIZATION_NODE_ID']; // TODO: cache from GitHub response.
         $this->github_user = $_POST['user'] ?? $_GET['user'] ?? $_ENV['GITHUB_USER'];
 
         $this->tmetric_token = $_ENV['TMETRIC_TOKEN'];
@@ -42,7 +47,8 @@ class Config
   ) {
     contributionsCollection(
       from: "{$this->date_from}T00:00:00",
-      to: "{$this->date_to}T23:59:59"
+      to: "{$this->date_to}T23:59:59",
+      organizationID: "{$this->github_organization_node_id}"
     ) {
       commitContributionsByRepository(
         maxRepositories: 100
@@ -64,6 +70,8 @@ GRAPHQL;
     {
         $client = new Github\Client();
         $client->authenticate($this->github_token, null, Github\Client::AUTH_ACCESS_TOKEN);
+
+        return $client;
     }
 
     public function getTMetricClient(): GuzzleHttp\Client

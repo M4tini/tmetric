@@ -208,7 +208,7 @@ switch ($config->action) {
                     'until'    => $config->date_to . 'T23:59:59Z',
                 ]);
             } catch (Github\Exception\RuntimeException $exception) {
-                var_dump('Error retrieving commits: ' . $exception->getMessage());
+                var_dump('Error retrieving commits for ' . $config->github_organization . '/' . $repository . ' - ' . $exception->getMessage());
                 continue;
             }
 
