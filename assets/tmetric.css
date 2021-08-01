@@ -53,6 +53,14 @@ tr.center td {
   text-align: center;
 }
 
+.center {
+  text-align: center;
+}
+
+.left {
+  float: left;
+}
+
 .weekend {
   background: #faa;
 }

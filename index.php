@@ -58,12 +58,12 @@ echo '
           Date to<br>
           <input type="date" name="date_to" value="' . $config->date_to . '"/>
         </td>
-        <td style="text-align:center;">
-          <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()">◀</a>
-          <a href="#" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1);document.forms[0].submit()">▶</a>
+        <td class="center">
+          <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()" title="Yesterday">◀</a>
+          <a href="#" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1);document.forms[0].submit()" title="Tomorrow">▶</a>
           <br>
-          <a href="#" onclick="modifyDate(\'date_from\', -7);modifyDate(\'date_to\', -7);document.forms[0].submit()">◀◀</a>
-          <a href="#" onclick="modifyDate(\'date_from\', 7);modifyDate(\'date_to\', 7);document.forms[0].submit()">▶▶</a>
+          <a href="#" onclick="modifyDate(\'date_from\', -7);modifyDate(\'date_to\', -7);document.forms[0].submit()" title="Last week">◀◀</a>
+          <a href="#" onclick="modifyDate(\'date_from\', 7);modifyDate(\'date_to\', 7);document.forms[0].submit()" title="Next week">▶▶</a>
         </td>
         <td>
           <button type="submit">search</button>
@@ -177,7 +177,7 @@ switch ($config->action) {
                     if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
                         $selected = 'selected="selected"';
                     }
-                    if (str_contains($repository, 'app') || str_contains($repository, 'backoffice') && $projectName === 'Contract Module') {
+                    if ((str_contains($repository, 'app') || str_contains($repository, 'backoffice')) && $projectName === 'Contract Module') {
                         $selected = 'selected="selected"';
                     }
                     if (str_contains($repository, 'infrastructure') && $projectName === 'Performance') {
@@ -283,7 +283,7 @@ switch ($config->action) {
     case 'report':
         $projects = $config->getTMetricProjects();
 
-        $tables[0] = '<table style="float:left">
+        $tables[0] = '<table class="left">
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>';
         do {
@@ -303,7 +303,7 @@ switch ($config->action) {
         </table>';
 
         foreach ($config->getTMetricUsers() as $userId => $username) {
-            $tables[$userId] = '<table style="float:left">';
+            $tables[$userId] = '<table class="center left">';
 
             $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
                     'startDate' => $config->date_from . 'T00:00:00',
@@ -367,8 +367,8 @@ switch ($config->action) {
 
             $total = array_sum($counter);
             $tables[$userId] .= '<tr>' . array_reduce($counter, function ($carry, $count) use ($total) {
-                return $carry . '<th bgcolor="#B4C7E7" title="' . $count . ' / ' . $total . '">' . ($count ? $count : '') . '</th>';
-            }) . '</tr>';
+                    return $carry . '<th bgcolor="#B4C7E7" title="' . $count . ' / ' . $total . '">' . ($count ? $count : '') . '</th>';
+                }) . '</tr>';
             $tables[$userId] .= '</table>';
         }
 
