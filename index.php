@@ -367,8 +367,9 @@ switch ($config->action) {
 
             $total = array_sum($counter);
             $tables[$userId] .= '<tr>' . array_reduce($counter, function ($carry, $count) use ($total) {
-                    return $carry . '<th bgcolor="#B4C7E7" title="' . $count . ' / ' . $total . '">' . ($count ? $count : '') . '</th>';
+                    return $carry . '<th bgcolor="#B4C7E7">' . ($count ?: '') . '</th>';
                 }) . '</tr>';
+            $tables[$userId] .= '<tr><th bgcolor="#B4C7E7" colspan="' . count($counter) . '">' . ($total ?: '') . '</th></tr>';
             $tables[$userId] .= '</table>';
         }
 
