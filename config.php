@@ -113,4 +113,20 @@ GRAPHQL;
     {
         return in_array($dateTime->format('l'), ['Saturday', 'Sunday']);
     }
+
+    public function isHoliday(DateTime $dateTime): bool
+    {
+        return in_array($dateTime->format('Y-m-d'), [
+            '2021-01-01', // New year
+            '2021-04-04', // Easter
+            '2021-04-05', // Easter
+            '2021-04-27', // King
+//            '2021-05-05', // Liberation (every 5 years)
+            '2021-05-13', // Ascention
+            '2021-05-23', // Pentecost
+            '2021-05-24', // Pentecost
+            '2021-12-25', // Christmas
+            '2021-12-26', // Christmas
+        ]);
+    }
 }

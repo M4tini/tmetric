@@ -59,11 +59,11 @@ echo '
           <input type="date" name="date_to" value="' . $config->date_to . '"/>
         </td>
         <td style="text-align:center;">
-          <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()">&lt;</a>
-          <a href="#" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1);document.forms[0].submit()">&gt;</a>
+          <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()">◀</a>
+          <a href="#" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1);document.forms[0].submit()">▶</a>
           <br>
-          <a href="#" onclick="modifyDate(\'date_from\', -7);modifyDate(\'date_to\', -7);document.forms[0].submit()">&lt;&lt;</a>
-          <a href="#" onclick="modifyDate(\'date_from\', 7);modifyDate(\'date_to\', 7);document.forms[0].submit()">&gt;&gt;</a>
+          <a href="#" onclick="modifyDate(\'date_from\', -7);modifyDate(\'date_to\', -7);document.forms[0].submit()">◀◀</a>
+          <a href="#" onclick="modifyDate(\'date_from\', 7);modifyDate(\'date_to\', 7);document.forms[0].submit()">▶▶</a>
         </td>
         <td>
           <button type="submit">search</button>
@@ -195,7 +195,7 @@ switch ($config->action) {
                 $startHour = $date->format('H');
                 $sortKey = $date->format('YmdHi') . $repository . $message;
                 $res[$sortKey] = '
-                        <form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
+                        <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
                         $commit['commit']['author']['name'],
                         $repository,
@@ -246,7 +246,7 @@ switch ($config->action) {
 
             $sortKey = $start->format('YmdHi');
             $res[$sortKey] = '
-                    <form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
+                    <form action="/tmetric.php" method="post" target="_blank">
                         <td>' . implode('</td><td>', [
                     $start->format('Y-m-d'),
                     $start->format('H:i') . ' - ' . $end->format('H:i'),
@@ -266,7 +266,7 @@ switch ($config->action) {
                 ]) . '</td>
                     </form>
                     
-                    <form action="/tmetric.php" method="post" target="_blank" style="margin:0;">
+                    <form action="/tmetric.php" method="post" target="_blank">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
                         <input type="hidden" name="date" value="' . $start->format('Y-m-d') . '">
@@ -283,19 +283,24 @@ switch ($config->action) {
     case 'report':
         $projects = $config->getTMetricProjects();
 
-        $tables[0] = '<table style="float:left"><tr><td></td><td></td></tr><tr><td></td><td></td></tr>';
+        $tables[0] = '<table style="float:left">
+            <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>
+            <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>';
         do {
-            $class = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
+            $color = $config->isWeekend($config->dateFrom) ? 'bgcolor="#FFC7CE"' : '';
+            $color = $config->isHoliday($config->dateFrom) ? 'bgcolor="#F4B183"' : $color;
             $cols = [
                 $config->dateFrom->format('d/m'),
                 $config->dateFrom->format('D'),
             ];
 
-            $tables[0] .= '<tr' . $class . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
+            $tables[0] .= '<tr><td ' . $color . '>' . implode('</td><td ' . $color . '>', $cols) . '</td></tr>';
 
             $config->dateFrom->modify('+1 day');
         } while ($config->dateFrom->format('Ymd') <= $config->dateTo->format('Ymd'));
-        $tables[0] .= '</table>';
+        $tables[0] .= '
+            <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>
+        </table>';
 
         foreach ($config->getTMetricUsers() as $userId => $username) {
             $tables[$userId] = '<table style="float:left">';
@@ -319,17 +324,19 @@ switch ($config->action) {
                 $dateEntries[$date][$project][] = $timeEntry;
             }
 
-            $tables[$userId] .= '<tr class="center"><td colspan="' . count($projects) . '">' . $username . '</td></tr>';
-            $tables[$userId] .= '<tr class="center">';
+            $tables[$userId] .= '<tr><th bgcolor="#B4C7E7" colspan="' . count($projects) . '">' . $username . '</th></tr>';
+            $tables[$userId] .= '<tr>';
             foreach (array_values($projects) as $key => $projectName) {
-                $tables[$userId] .= '<td title="' . $projectName . '">P' . ($key + 1) . '</td>';
+                $tables[$userId] .= '<th bgcolor="#B4C7E7" title="' . $projectName . '">P' . ($key + 1) . '</td>';
             }
             $tables[$userId] .= '</tr>';
 
             $dateFrom = DateTime::createFromFormat('Y-m-d', $config->date_from);
             $dateTo = DateTime::createFromFormat('Y-m-d', $config->date_to);
+            $counter = array_combine(array_keys($projects), array_fill(0, count($projects), 0));
             do {
-                $class = $config->isWeekend($dateFrom) ? ' class="weekend"' : '';
+                $color = $config->isWeekend($dateFrom) ? 'bgcolor="#FFC7CE"' : '';
+                $color = $config->isHoliday($dateFrom) ? 'bgcolor="#F4B183"' : $color;
                 $cols = [];
 
                 foreach ($projects as $projectId => $projectName) {
@@ -350,13 +357,18 @@ switch ($config->action) {
                     $hoursPer15m = ceil(($hours - 0.125) * 4) / 4;
 
                     $cols[] = $seconds ? '<span title="' . number_format($hours, 2, '.', '') . '">' . number_format($hoursPer15m, 2, '.', '') . '</span>' : '';
+                    $counter[$projectId] += $hoursPer15m;
                 }
 
-                $tables[$userId] .= '<tr' . $class . '><td>' . implode('</td><td>', $cols) . '</td></tr>';
+                $tables[$userId] .= '<tr><td ' . $color . '>' . implode('</td><td ' . $color . '>', $cols) . '</td></tr>';
 
                 $dateFrom->modify('+1 day');
             } while ($dateFrom->format('Ymd') <= $dateTo->format('Ymd'));
 
+            $total = array_sum($counter);
+            $tables[$userId] .= '<tr>' . array_reduce($counter, function ($carry, $count) use ($total) {
+                return $carry . '<th bgcolor="#B4C7E7" title="' . $count . ' / ' . $total . '">' . ($count ? $count : '') . '</th>';
+            }) . '</tr>';
             $tables[$userId] .= '</table>';
         }
 
