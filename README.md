@@ -42,6 +42,11 @@ Click `Get new API token` on your profile page: https://app.tmetric.com/#/profil
 Generate a Team Summary report, click on your user and copy the values from the browser address bar:
 `https://app.tmetric.com/#/reports/{workspace_id}/detailed?user={user_id}`
 
+#### Proposed TMetric time entries (optional)
+
+You can specify the format of the proposed TMetric time entries. The default `H:i` can be changed to `H:00` to ignore the minutes of the GitHub commit.
+The default length of a proposed time entry is 1 hour, defined by the interval `PT1H`. You can change this to `PT30M` or `PT15M` to decrease the default length.
+
 ## References
 
 - https://docs.github.com/en/rest

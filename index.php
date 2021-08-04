@@ -206,8 +206,8 @@ switch ($config->action) {
                             <input type="hidden" name="action" value="post">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
                             <input type="date" name="date" value="' . $date->format('Y-m-d') . '" required>
-                            <input type="time" name="start" value="' . $startHour . ':00" required>
-                            <input type="time" name="end" value="' . (++$startHour < 10 ? '0' : '') . $startHour . ':00" required>
+                            <input type="time" name="start" value="' . $date->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <input type="time" name="end" value="' . $date->add(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
                             <select name="project" required>' . implode('', $projectOptions) . '</select>',
                         '
                             <button type="submit">log</button>',
