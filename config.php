@@ -7,6 +7,7 @@ Dotenv\Dotenv::createImmutable(__DIR__)->load();
 class Config
 {
     public string $action;
+    public array $actions;
     public string $date_from;
     public string $date_to;
     public DateTime $dateFrom;
@@ -21,6 +22,7 @@ class Config
     public function __construct()
     {
         $this->action = $_POST['action'] ?? $_GET['action'] ?? 'sync';
+        $this->actions = explode(',', $_ENV['ALLOWED_ACTIONS']);
         $this->date_from = $_POST['date_from'] ?? $_GET['date_from'] ?? date('Y-m-d');
         $this->date_to = $_POST['date_to'] ?? $_GET['date_to'] ?? date('Y-m-d');
 
@@ -90,7 +92,7 @@ GRAPHQL;
         return [
             271216 => 'API',
             271222 => 'Microservices',
-            271224 => 'Contract Module',
+            271224 => 'Admin / V2',
             271225 => 'Automation Rules',
             271226 => 'Performance',
             461354 => 'Shipment collections',
@@ -122,7 +124,7 @@ GRAPHQL;
             '2021-04-05', // Easter
             '2021-04-27', // King
 //            '2021-05-05', // Liberation (every 5 years)
-            '2021-05-13', // Ascention
+            '2021-05-13', // Ascension
             '2021-05-23', // Pentecost
             '2021-05-24', // Pentecost
             '2021-12-25', // Christmas

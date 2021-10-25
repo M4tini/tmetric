@@ -42,8 +42,10 @@ $actions = [
     'tmetric-time-entries',
 ];
 foreach ($actions as $action) {
-    $selected = ($config->action === $action) ? 'selected="selected"' : '';
-    echo '<option value="' . $action . '" ' . $selected . '>' . $action . '</option>';
+    if (in_array($action, $config->actions) || $config->actions === ['*']) {
+        $selected = ($config->action === $action) ? 'selected="selected"' : '';
+        echo '<option value="' . $action . '" ' . $selected . '>' . $action . '</option>';
+    }
 }
 $class = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
 
@@ -170,14 +172,14 @@ switch ($config->action) {
 
             foreach ($commitList as $commit) {
                 $message = $commit['commit']['message'];
-                $date = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['author']['date']);
+                $date = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['committer']['date']);
                 $projectOptions = [];
                 foreach ($projects as $projectId => $projectName) {
                     $selected = '';
                     if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
                         $selected = 'selected="selected"';
                     }
-                    if ((str_contains($repository, 'app') || str_contains($repository, 'backoffice')) && $projectName === 'Contract Module') {
+                    if ((str_contains($repository, 'app') || str_contains($repository, 'backoffice')) && $projectName === 'Admin / V2') {
                         $selected = 'selected="selected"';
                     }
                     if (str_contains($repository, 'infrastructure') && $projectName === 'Performance') {
@@ -197,7 +199,7 @@ switch ($config->action) {
                 $res[$sortKey] = '
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
-                        $commit['commit']['author']['name'],
+                        $commit['commit']['committer']['name'],
                         $repository,
                         $date->format('Y-m-d'),
                         $date->format('H:i'),

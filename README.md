@@ -1,4 +1,4 @@
-# TMetric
+# EZ TMetric
 
 UI to browse your GitHub repository commits filtered by a date range and save them as time entries in TMetric.
 
@@ -19,7 +19,7 @@ docker-compose up -d
 ## Configuration
 
 Your public contributions are not visible through the GitHub GraphQL API, used to retrieve repository contributions.
-You need to allow this by activating `Private contributions` in the `Contribution settings` on your GitHub profile page.
+You need to allow this by activating `Private contributions` in the `Contribution settings` on your GitHub profile.
 
 The `.env` file needs some values to work correctly.
 
