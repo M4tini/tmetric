@@ -175,7 +175,9 @@ switch ($config->action) {
 
             foreach ($commitList as $commit) {
                 $message = $commit['commit']['message'];
-                $date = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['committer']['date']);
+                $dateAuth = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['author']['date']);
+                $dateCommit = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['committer']['date']);
+                $sameDates = $commit['commit']['author']['date'] === $commit['commit']['committer']['date'];
                 $projectOptions = [];
                 foreach ($projects as $projectId => $projectName) {
                     $selected = '';
@@ -197,22 +199,27 @@ switch ($config->action) {
                 if (str_contains($message, 'Merge pull request') || str_contains($message, 'Merge branch')) {
                     continue;
                 }
-                $startHour = $date->format('H');
-                $sortKey = $date->format('YmdHi') . $repository . $message;
+                $sortKey = $dateCommit->format('YmdHi') . $repository . $message;
                 $res[$sortKey] = '
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
                         $commit['commit']['committer']['name'],
                         $repository,
-                        $date->format('Y-m-d'),
-                        $date->format('H:i'),
+                        implode('<br>', array_filter([
+                            $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('Y-m-d') . '</span>',
+                            $dateCommit->format('Y-m-d'),
+                        ])),
+                        implode('<br>', array_filter([
+                            $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('H:i') . '</span>',
+                            $dateCommit->format('H:i'),
+                        ])),
                         $message,
                         '
                             <input type="hidden" name="action" value="post">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
-                            <input type="date" name="date" value="' . $date->format('Y-m-d') . '" required>
-                            <input type="time" name="start" value="' . $date->format($_ENV['LOG_TIME_FORMAT']) . '" required>
-                            <input type="time" name="end" value="' . $date->add(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <input type="date" name="date" value="' . $dateCommit->format('Y-m-d') . '" required>
+                            <input type="time" name="start" value="' . $dateCommit->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <input type="time" name="end" value="' . $dateCommit->add(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
                             <select name="project" required>' . implode('', $projectOptions) . '</select>',
                         '
                             <button type="submit">log</button>',
