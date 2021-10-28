@@ -47,16 +47,19 @@ foreach ($actions as $action) {
         echo '<option value="' . $action . '" ' . $selected . '>' . $action . '</option>';
     }
 }
-$class = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
+$class1 = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
+$class1 = $config->isHoliday($config->dateFrom) ? ' class="holiday"' : $class1;
+$class2 = $config->isWeekend($config->dateTo) ? ' class="weekend"' : '';
+$class2 = $config->isHoliday($config->dateTo) ? ' class="holiday"' : $class2;
 
 echo '
           </select>
         </td>
-        <td' . $class . '>
+        <td' . $class1 . '>
           Date from<br>
           <input type="date" name="date_from" value="' . $config->date_from . '"/>
         </td>
-        <td' . $class . '>
+        <td' . $class2 . '>
           Date to<br>
           <input type="date" name="date_to" value="' . $config->date_to . '"/>
         </td>
