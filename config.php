@@ -111,6 +111,24 @@ GRAPHQL;
         ];
     }
 
+    /**
+     * Use bgcolor to make copy to Excel retain background colors.
+     */
+    public function backgroundColor(DateTime $dateTime): string
+    {
+        return match (true) {
+            $this->isWeekend($dateTime) => 'bgcolor="#FFC7CE"',
+            $this->isHoliday($dateTime) => 'bgcolor="#F4B183"',
+            $this->isFuture($dateTime) => 'bgcolor="#999"',
+            default => '',
+        };
+    }
+
+    public function isFuture(DateTime $dateTime): bool
+    {
+        return $dateTime->format('Ymd') > (new DateTime())->format('Ymd');
+    }
+
     public function isWeekend(DateTime $dateTime): bool
     {
         return in_array($dateTime->format('l'), ['Saturday', 'Sunday']);

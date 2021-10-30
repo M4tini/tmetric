@@ -61,14 +61,6 @@ tr.center td {
   float: left;
 }
 
-.weekend {
-  background: #ffc7ce;
-}
-
-.holiday {
-  background: #f4b183;
-}
-
 .gray-text {
   color: #ccc;
 }

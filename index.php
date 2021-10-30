@@ -47,19 +47,15 @@ foreach ($actions as $action) {
         echo '<option value="' . $action . '" ' . $selected . '>' . $action . '</option>';
     }
 }
-$class1 = $config->isWeekend($config->dateFrom) ? ' class="weekend"' : '';
-$class1 = $config->isHoliday($config->dateFrom) ? ' class="holiday"' : $class1;
-$class2 = $config->isWeekend($config->dateTo) ? ' class="weekend"' : '';
-$class2 = $config->isHoliday($config->dateTo) ? ' class="holiday"' : $class2;
 
 echo '
           </select>
         </td>
-        <td' . $class1 . '>
+        <td ' . $config->backgroundColor($config->dateFrom) . '>
           Date from<br>
           <input type="date" name="date_from" value="' . $config->date_from . '"/>
         </td>
-        <td' . $class2 . '>
+        <td ' . $config->backgroundColor($config->dateTo) . '>
           Date to<br>
           <input type="date" name="date_to" value="' . $config->date_to . '"/>
         </td>
@@ -244,7 +240,7 @@ switch ($config->action) {
         foreach ($timeEntries as $timeEntry) {
             $start = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['startTime'] . 'Z');
             $end = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['endTime'] . 'Z');
-            $diff = $start->diff($end);
+            $diff = $start->diff($end ?: new DateTime());
             $totalDiff->add($diff);
             $projectOptions = [];
             foreach ($projects as $projectId => $projectName) {
@@ -299,8 +295,7 @@ switch ($config->action) {
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>';
         do {
-            $color = $config->isWeekend($config->dateFrom) ? 'bgcolor="#FFC7CE"' : '';
-            $color = $config->isHoliday($config->dateFrom) ? 'bgcolor="#F4B183"' : $color;
+            $color = $config->backgroundColor($config->dateFrom);
             $cols = [
                 $config->dateFrom->format('d/m'),
                 $config->dateFrom->format('D'),
@@ -329,7 +324,7 @@ switch ($config->action) {
                 $date = substr($timeEntry['startTime'], 0, 10);
 
                 if (!isset ($timeEntry['project'])) {
-                    echo '<h2 style="color:red;">Missing project for time entry of <strong>' . $username . '</strong> on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
+                    echo '<h2 style="color:#f00;">Missing project for time entry of <strong>' . $username . '</strong> on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
                 }
 
                 $project = $timeEntry['project']['id'];
@@ -347,19 +342,22 @@ switch ($config->action) {
             $dateTo = DateTime::createFromFormat('Y-m-d', $config->date_to);
             $counter = array_combine(array_keys($projects), array_fill(0, count($projects), 0));
             do {
-                $color = $config->isWeekend($dateFrom) ? 'bgcolor="#FFC7CE"' : '';
-                $color = $config->isHoliday($dateFrom) ? 'bgcolor="#F4B183"' : $color;
+                $color = $config->backgroundColor($dateFrom);
                 $cols = [];
 
                 foreach ($projects as $projectId => $projectName) {
                     $totalDiff = (new DateTime())->setTime(0, 0, 0);
                     $startDiff = $totalDiff->getTimestamp();
+                    $ongoing = '';
 
                     if (isset($dateEntries[$dateFrom->format('Y-m-d')][$projectId])) {
                         foreach ($dateEntries[$dateFrom->format('Y-m-d')][$projectId] as $timeEntry) {
                             $start = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['startTime'] . 'Z');
                             $end = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['endTime'] . 'Z');
-                            $diff = $start->diff($end);
+                            if (!$end) {
+                                $ongoing = ' style="color:#f90;" ';
+                            }
+                            $diff = $start->diff($end ?: new DateTime());
                             $totalDiff->add($diff);
                         }
                     }
@@ -368,7 +366,7 @@ switch ($config->action) {
                     $hours = $seconds / 60 / 60;
                     $hoursPer15m = ceil(($hours - 0.125) * 4) / 4;
 
-                    $cols[] = $seconds ? '<span title="' . number_format($hours, 2, '.', '') . '">' . number_format($hoursPer15m, 2, '.', '') . '</span>' : '';
+                    $cols[] = $seconds ? '<span title="' . number_format($hours, 2, '.', '') . '"' . $ongoing . '>' . number_format($hoursPer15m, 2, '.', '') . '</span>' : '';
                     $counter[$projectId] += $hoursPer15m;
                 }
 
