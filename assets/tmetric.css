@@ -32,6 +32,11 @@ input[type="text"] {
   height: 24px;
 }
 
+.months button {
+  width: 15%;
+  height: 24px;
+}
+
 select {
   height: 24px;
 }

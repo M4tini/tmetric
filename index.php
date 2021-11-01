@@ -72,6 +72,21 @@ echo '
         <td>
           <a href="/" onclick="return window.confirm(\'okok?\')">reset</a>
         </td>
+        <td class="months">
+          <button type="button" onclick="targetMonth(1);document.forms[0].submit()">jan</button>
+          <button type="button" onclick="targetMonth(2);document.forms[0].submit()">feb</button>
+          <button type="button" onclick="targetMonth(3);document.forms[0].submit()">mrt</button>
+          <button type="button" onclick="targetMonth(4);document.forms[0].submit()">apr</button>
+          <button type="button" onclick="targetMonth(5);document.forms[0].submit()">may</button>
+          <button type="button" onclick="targetMonth(6);document.forms[0].submit()">jun</button>
+          <br>
+          <button type="button" onclick="targetMonth(7);document.forms[0].submit()">jul</button>
+          <button type="button" onclick="targetMonth(8);document.forms[0].submit()">aug</button>
+          <button type="button" onclick="targetMonth(9);document.forms[0].submit()">sep</button>
+          <button type="button" onclick="targetMonth(10);document.forms[0].submit()">oct</button>
+          <button type="button" onclick="targetMonth(11);document.forms[0].submit()">nov</button>
+          <button type="button" onclick="targetMonth(12);document.forms[0].submit()">dec</button>
+        </td>
       </tr>
     </table>
     </form>
