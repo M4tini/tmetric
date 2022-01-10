@@ -7,11 +7,8 @@ function modifyDate (name, addDays = 1) {
   dateFrom.value = dateToString(date)
 }
 
-function targetMonth (monthNumber) {
-  const date = new Date()
-
-  date.setMonth(monthNumber - 1)
-  date.setDate(1)
+function targetMonth (year, monthNumber) {
+  const date = new Date(year, monthNumber - 1, 1)
 
   const dateFrom = document.getElementsByName('date_from')[0]
   dateFrom.value = dateToString(date)
