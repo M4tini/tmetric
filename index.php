@@ -10,8 +10,8 @@ echo '
   <head>
     <meta charset="UTF-8">
     <title>EZ TMetric</title>
-    <link rel="stylesheet" href="/assets/tmetric.css">
-    <script src="/assets/tmetric.js"></script>
+    <link rel="stylesheet" href="/assets/tmetric.css?d=' . filemtime('assets/tmetric.css') . '">
+    <script src="/assets/tmetric.js?d=' . filemtime('assets/tmetric.js') . '"></script>
   </head>
   <body>
     <form action="/" method="post">
