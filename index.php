@@ -377,6 +377,20 @@ switch ($config->action) {
                         }
                     }
 
+                    if (isset($_ENV['ADD_SCRUM_HOURS']) && $_ENV['ADD_SCRUM_HOURS'] === 'true' && $projectId === 461355) {
+                        if ($config->backgroundColor($dateFrom) === '') {
+                            // Grooming
+                            if (in_array($dateFrom->format('l'), ['Monday'])) {
+                                $totalDiff->add(new DateInterval('PT1H'));
+                            }
+                            // Refinement
+                            $refinementDays = ($dateFrom->format('W') % 2 === 0) ? ['Wednesday'] : ['Tuesday', 'Thursday'];
+                            if (in_array($dateFrom->format('l'), $refinementDays)) {
+                                $totalDiff->add(new DateInterval('PT1H'));
+                            }
+                        }
+                    }
+
                     $endDiff = $totalDiff->getTimestamp();
                     $seconds = $endDiff - $startDiff;
                     $hours = $seconds / 60 / 60;
