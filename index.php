@@ -192,7 +192,7 @@ switch ($config->action) {
                 $projectOptions = [];
                 foreach ($projects as $projectId => $projectName) {
                     $selected = '';
-                    if (str_contains($repository, 'microservice-') && $projectName === 'Microservices') {
+                    if ((str_contains($repository, 'microservice-') || str_contains($repository, 'integration-') || str_contains($repository, '-plugin')) && $projectName === 'Microservices') {
                         $selected = 'selected="selected"';
                     }
                     if ((str_contains($repository, 'app') || str_contains($repository, 'backoffice')) && $projectName === 'Admin / V2') {
@@ -376,6 +376,7 @@ switch ($config->action) {
                             $totalDiff->add($diff);
                         }
                     }
+
                     $endDiff = $totalDiff->getTimestamp();
                     $seconds = $endDiff - $startDiff;
                     $hours = $seconds / 60 / 60;
