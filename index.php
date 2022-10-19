@@ -222,7 +222,7 @@ switch ($config->action) {
                         ])),
                         implode('<br>', array_filter([
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('H:i') . '</span>',
-                            $dateCommit->format('H:i'),
+                            $dateCommit->format('D @ H:i'),
                         ])),
                         $message,
                         '
