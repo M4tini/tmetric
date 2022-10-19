@@ -229,8 +229,8 @@ switch ($config->action) {
                             <input type="hidden" name="action" value="post">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
                             <input type="date" name="date" value="' . $dateCommit->format('Y-m-d') . '" required>
-                            <input type="time" name="start" value="' . $dateCommit->format($_ENV['LOG_TIME_FORMAT']) . '" required>
-                            <input type="time" name="end" value="' . $dateCommit->add(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <input type="time" name="start" value="' . (clone $dateCommit)->sub(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <input type="time" name="end" value="' . $dateCommit->format($_ENV['LOG_TIME_FORMAT']) . '" required>
                             <select name="project" required>' . implode('', $projectOptions) . '</select>',
                         '
                             <button type="submit">log</button>',
