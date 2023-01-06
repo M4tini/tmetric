@@ -157,6 +157,16 @@ GRAPHQL;
             '2022-06-06', // Pentecost
             '2022-12-25', // Christmas
             '2022-12-26', // Christmas
+            '2023-01-01', // New year
+            '2023-04-09', // Easter
+            '2023-04-10', // Easter
+            '2023-04-27', // King
+//            '2023-05-05', // Liberation (every 5 years)
+            '2023-05-18', // Ascension
+            '2023-05-28', // Pentecost
+            '2023-05-29', // Pentecost
+            '2023-12-25', // Christmas
+            '2023-12-26', // Christmas
         ]);
     }
 }
