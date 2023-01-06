@@ -186,8 +186,8 @@ switch ($config->action) {
 
             foreach ($commitList as $commit) {
                 $message = $commit['commit']['message'];
-                $dateAuth = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['author']['date']);
-                $dateCommit = DateTime::createFromFormat(DateTimeInterface::ISO8601, $commit['commit']['committer']['date']);
+                $dateAuth = DateTime::createFromFormat(DateTimeInterface::ATOM, $commit['commit']['author']['date']);
+                $dateCommit = DateTime::createFromFormat(DateTimeInterface::ATOM, $commit['commit']['committer']['date']);
                 $sameDates = $commit['commit']['author']['date'] === $commit['commit']['committer']['date'];
                 $projectOptions = [];
                 foreach ($projects as $projectId => $projectName) {
@@ -215,15 +215,15 @@ switch ($config->action) {
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
                         $commit['commit']['committer']['name'],
-                        $repository,
                         implode('<br>', array_filter([
-                            $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('Y-m-d') . '</span>',
-                            $dateCommit->format('Y-m-d'),
+                            $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('D, d M Y') . '</span>',
+                            $dateCommit->format('D, d M Y'),
                         ])),
                         implode('<br>', array_filter([
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('H:i') . '</span>',
-                            $dateCommit->format('D @ H:i'),
+                            $dateCommit->format('H:i'),
                         ])),
+                        $repository,
                         $message,
                         '
                             <input type="hidden" name="action" value="post">
@@ -253,8 +253,8 @@ switch ($config->action) {
         $totalDiff = (new DateTime())->setTime(0, 0, 0);
 
         foreach ($timeEntries as $timeEntry) {
-            $start = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['startTime'] . 'Z');
-            $end = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['endTime'] . 'Z');
+            $start = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['startTime'] . 'Z');
+            $end = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['endTime'] . 'Z');
             $diff = $start->diff($end ?: new DateTime());
             $totalDiff->add($diff);
             $projectOptions = [];
@@ -271,7 +271,7 @@ switch ($config->action) {
             $res[$sortKey] = '
                     <form action="/tmetric.php" method="post" target="_blank">
                         <td>' . implode('</td><td>', [
-                    $start->format('Y-m-d'),
+                    $start->format('D, d M Y'),
                     $start->format('H:i') . ' - ' . $end->format('H:i'),
                     $diff->format('%h h %i m'),
                     $timeEntry['project']['name'],
@@ -367,8 +367,8 @@ switch ($config->action) {
 
                     if (isset($dateEntries[$dateFrom->format('Y-m-d')][$projectId])) {
                         foreach ($dateEntries[$dateFrom->format('Y-m-d')][$projectId] as $timeEntry) {
-                            $start = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['startTime'] . 'Z');
-                            $end = DateTime::createFromFormat(DateTimeInterface::ISO8601, $timeEntry['endTime'] . 'Z');
+                            $start = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['startTime'] . 'Z');
+                            $end = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['endTime'] . 'Z');
                             if (!$end) {
                                 $ongoing = ' style="color:#f90;" ';
                             }
