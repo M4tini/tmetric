@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 Dotenv\Dotenv::createImmutable(__DIR__)->load();
@@ -108,6 +110,7 @@ GRAPHQL;
             128919 => 'Nick de Vries',
             128000 => 'Yoan-Alexander Grigorov',
             217331 => 'Nick Zwaans',
+            372173 => 'Yoeri Walstra',
         ];
     }
 
@@ -119,8 +122,8 @@ GRAPHQL;
         return match (true) {
             $this->isWeekend($dateTime) => 'bgcolor="#FFC7CE"',
             $this->isHoliday($dateTime) => 'bgcolor="#F4B183"',
-            $this->isFuture($dateTime) => 'bgcolor="#999"',
-            default => '',
+            $this->isFuture($dateTime)  => 'bgcolor="#999"',
+            default                     => '',
         };
     }
 
@@ -167,6 +170,16 @@ GRAPHQL;
             '2023-05-29', // Pentecost
             '2023-12-25', // Christmas
             '2023-12-26', // Christmas
+            '2024-01-01', // New year
+            '2024-03-31', // Easter
+            '2024-04-01', // Easter
+            '2024-04-27', // King
+//            '2024-05-05', // Liberation (every 5 years)
+            '2024-05-09', // Ascension
+            '2024-05-19', // Pentecost
+            '2024-05-20', // Pentecost
+            '2024-12-25', // Christmas
+            '2024-12-26', // Christmas
         ]);
     }
 }
