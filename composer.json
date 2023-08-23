@@ -1,8 +1,13 @@
 {
   "require": {
-    "php": ">=8.0",
+    "php": ">=8.2",
     "guzzlehttp/guzzle": "^7.3",
     "knplabs/github-api": "^3.3",
     "vlucas/phpdotenv": "^5.3"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   }
 }

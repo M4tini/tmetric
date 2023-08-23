@@ -1,7 +1,7 @@
 version: '2'
 services:
   tmetric:
-    image: webdevops/php-nginx-dev:8.0
+    image: webdevops/php-nginx-dev:8.2
     environment:
       - PHP_DISPLAY_ERRORS=1
       - XDEBUG_MODE=develop,debug
