@@ -1,13 +1,17 @@
 {
   "require": {
     "php": ">=8.2",
-    "guzzlehttp/guzzle": "^7.3",
-    "knplabs/github-api": "^3.3",
-    "vlucas/phpdotenv": "^5.3"
+    "guzzlehttp/guzzle": "^7.5",
+    "knplabs/github-api": "^3.11",
+    "vlucas/phpdotenv": "^5.4",
+    "nesbot/carbon": "^2.69"
   },
   "config": {
     "allow-plugins": {
       "php-http/discovery": true
     }
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest"
   }
 }
