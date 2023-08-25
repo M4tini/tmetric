@@ -6,7 +6,7 @@ require_once __DIR__ . '/config.php';
 
 $config = new Config();
 
-$response = match ($config->action) {
+$response = match ($_POST['method']) {
     'post' => $config->getTMetricClient()->post('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query(['userId' => $config->tmetric_user_id]), [
         GuzzleHttp\RequestOptions::JSON => [
             'project'   => [

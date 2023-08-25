@@ -13,8 +13,8 @@ class Config
     private DateTimeZone $timezone;
     public Carbon $now;
     public string $offset;
-    public string $action;
-    public array $actions;
+    public string $view;
+    public array $views;
     public Carbon $dateFrom;
     public Carbon $dateTo;
     private string $github_token;
@@ -31,8 +31,8 @@ class Config
         $this->now = Carbon::now($this->timezone);
         $this->offset = $this->now->format('P');
 
-        $this->action = $_POST['action'] ?? $_GET['action'] ?? 'report';
-        $this->actions = explode(',', $_ENV['ALLOWED_ACTIONS']);
+        $this->view = $_POST['view'] ?? $_GET['view'] ?? 'report';
+        $this->views = explode(',', $_ENV['ALLOWED_ACTIONS']);
 
         $dateFrom = $_POST['date_from'] ?? $_GET['date_from'] ?? $this->now->format('Y-m-d');
         $dateTo = $_POST['date_to'] ?? $_GET['date_to'] ?? $this->now->format('Y-m-d');

@@ -29,10 +29,10 @@ echo '
         </td>
         <td>
           Action<br>
-          <select name="action">
+          <select name="view">
 ';
 
-$actions = [
+$views = [
     'sync',
     'report',
     'github-user',
@@ -43,10 +43,10 @@ $actions = [
     'tmetric-projects',
     'tmetric-time-entries',
 ];
-foreach ($actions as $action) {
-    if (in_array($action, $config->actions) || $config->actions === ['*']) {
-        $selected = ($config->action === $action) ? 'selected="selected"' : '';
-        echo '<option value="' . $action . '" ' . $selected . '>' . $action . '</option>';
+foreach ($views as $view) {
+    if (in_array($view, $config->views) || $config->views === ['*']) {
+        $selected = ($config->view === $view) ? 'selected="selected"' : '';
+        echo '<option value="' . $view . '" ' . $selected . '>' . $view . '</option>';
     }
 }
 
@@ -75,26 +75,26 @@ echo '
           <a href="/" onclick="return window.confirm(\'okok?\')">reset</a>
         </td>
         <td class="months">
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 1);document.forms[0].submit()">jan</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 2);document.forms[0].submit()">feb</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 3);document.forms[0].submit()">mrt</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 4);document.forms[0].submit()">apr</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 5);document.forms[0].submit()">may</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 6);document.forms[0].submit()">jun</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 1);document.forms[0].view.value = \'report\';document.forms[0].submit()">jan</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 2);document.forms[0].view.value = \'report\';document.forms[0].submit()">feb</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 3);document.forms[0].view.value = \'report\';document.forms[0].submit()">mrt</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 4);document.forms[0].view.value = \'report\';document.forms[0].submit()">apr</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 5);document.forms[0].view.value = \'report\';document.forms[0].submit()">may</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 6);document.forms[0].view.value = \'report\';document.forms[0].submit()">jun</button>
           <br>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 7);document.forms[0].submit()">jul</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 8);document.forms[0].submit()">aug</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 9);document.forms[0].submit()">sep</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 10);document.forms[0].submit()">oct</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 11);document.forms[0].submit()">nov</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 12);document.forms[0].submit()">dec</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 7);document.forms[0].view.value = \'report\';document.forms[0].submit()">jul</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 8);document.forms[0].view.value = \'report\';document.forms[0].submit()">aug</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 9);document.forms[0].view.value = \'report\';document.forms[0].submit()">sep</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 10);document.forms[0].view.value = \'report\';document.forms[0].submit()">oct</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 11);document.forms[0].view.value = \'report\';document.forms[0].submit()">nov</button>
+          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 12);document.forms[0].view.value = \'report\';document.forms[0].submit()">dec</button>
         </td>
       </tr>
     </table>
     </form>
 ';
 
-switch ($config->action) {
+switch ($config->view) {
     case 'github-user':
         $user = new Github\Api\User($config->getGithubClient());
         var_dump($user->show($config->github_user));
@@ -240,7 +240,7 @@ switch ($config->action) {
                         $repository,
                         $message,
                         '
-                            <input type="hidden" name="action" value="post">
+                            <input type="hidden" name="method" value="post">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
                             <input type="date" name="date" value="' . $dateCommit->format('Y-m-d') . '" required>
                             <input type="time" name="start" value="' . (clone $dateCommit)->sub(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
@@ -295,7 +295,7 @@ switch ($config->action) {
                     $timeEntry['project']['name'],
                     $note,
                     '
-                        <input type="hidden" name="action" value="put">
+                        <input type="hidden" name="method" value="put">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
                         <input type="text" name="note" value="' . $note . '" required><br>
                         <input type="date" name="date" value="' . $start->format('Y-m-d') . '" required>
@@ -307,7 +307,7 @@ switch ($config->action) {
                 ]) . '</td>
                     </form>
                     <form action="/tmetric.php" method="post" target="_blank">
-                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="method" value="delete">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
                         <input type="hidden" name="date" value="' . $start->format('Y-m-d') . '">
                         <input type="hidden" name="start" value="' . $start->format('H:i') . '">
