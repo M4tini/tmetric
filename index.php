@@ -55,11 +55,11 @@ echo '
         </td>
         <td ' . $config->backgroundColor($config->dateFrom) . '>
           Date from<br>
-          <input type="date" name="date_from" value="' . $config->date_from . '"/>
+          <input type="date" name="date_from" value="' . $config->dateFrom->format('Y-m-d') . '"/>
         </td>
         <td ' . $config->backgroundColor($config->dateTo) . '>
           Date to<br>
-          <input type="date" name="date_to" value="' . $config->date_to . '"/>
+          <input type="date" name="date_to" value="' . $config->dateTo->format('Y-m-d') . '"/>
         </td>
         <td class="center">
           <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()" title="Yesterday">◀</a>
@@ -121,8 +121,8 @@ switch ($config->action) {
             'author'   => $config->github_user,
             'per_page' => 100, // max 100
             'page'     => 1,
-            'since'    => $config->date_from . 'T00:00:00Z',
-            'until'    => $config->date_to . 'T23:59:59Z',
+            'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
+            'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
         ]));
         break;
 
@@ -142,8 +142,8 @@ switch ($config->action) {
 
     case 'tmetric-time-entries':
         $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
-                'startDate' => $config->date_from . 'T00:00:00',
-                'endDate'   => $config->date_to . 'T23:59:59',
+                'startDate' => $config->dateFrom->clone()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s'),
+                'endDate'   => $config->dateTo->clone()->setTime(23, 59, 59)->format('Y-m-d\TH:i:s'),
                 'userId'    => $config->tmetric_user_id,
             ]));
         $timeEntries = json_decode((string) $response->getBody(), true);
@@ -151,7 +151,7 @@ switch ($config->action) {
         break;
 
     case 'sync':
-        if ($config->dateFrom->diff($config->dateTo)->days > 7) {
+        if ($config->dateFrom->diffInDays($config->dateTo) > 7) {
             var_dump('Max date range is 7 days to avoid API overload.');
             exit;
         }
@@ -174,8 +174,8 @@ switch ($config->action) {
                     'author'   => $config->github_user,
                     'per_page' => 100, // max 100
                     'page'     => 1,
-                    'since'    => $config->date_from . 'T00:00:00Z',
-                    'until'    => $config->date_to . 'T23:59:59Z',
+                    'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
+                    'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
                 ]);
             } catch (Github\Exception\RuntimeException $exception) {
                 var_dump('Error retrieving commits for ' . $config->github_organization . '/' . $repository . ' - ' . $exception->getMessage());
@@ -188,22 +188,34 @@ switch ($config->action) {
 
             foreach ($commitList as $commit) {
                 $message = $commit['commit']['message'];
-                $dateAuth = DateTime::createFromFormat(DateTimeInterface::ATOM, $commit['commit']['author']['date']);
-                $dateCommit = DateTime::createFromFormat(DateTimeInterface::ATOM, $commit['commit']['committer']['date']);
-                $sameDates = $commit['commit']['author']['date'] === $commit['commit']['committer']['date'];
+                $dateAuth = $config->createCarbon($commit['commit']['author']['date']);
+                $dateCommit = $config->createCarbon($commit['commit']['committer']['date']);
+                $sameDates = $dateAuth->diffInSeconds($dateCommit) === 0;
                 $projectOptions = [];
                 foreach ($projects as $projectId => $projectName) {
                     $selected = '';
-                    if ((str_contains($repository, 'microservice-') || str_contains($repository, 'integration-') || str_contains($repository, '-plugin')) && $projectName === 'Microservices') {
+                    if (
+                        (str_contains($repository, 'microservice-') || str_contains($repository, 'integration-') || str_contains($repository, 'marketplace-') || str_contains($repository, '-plugin'))
+                        && $projectName === 'Microservices'
+                    ) {
                         $selected = 'selected="selected"';
                     }
-                    if ((str_contains($repository, 'app') || str_contains($repository, 'backoffice')) && $projectName === 'Admin / V2') {
+                    if (
+                        (str_contains($repository, 'app') || str_contains($repository, 'admin') || str_contains($repository, 'backoffice'))
+                        && $projectName === 'Admin / V2'
+                    ) {
                         $selected = 'selected="selected"';
                     }
-                    if (str_contains($repository, 'infrastructure') && $projectName === 'Performance') {
+                    if (
+                        (str_contains($repository, 'infrastructure') || str_contains(strtolower($message), 'queue'))
+                        && $projectName === 'Performance'
+                    ) {
                         $selected = 'selected="selected"';
                     }
-                    if (str_contains(strtolower($message), 'queue') && $projectName === 'Performance') {
+                    if (
+                        (str_contains(strtolower($message), 'return') || str_contains(strtolower($message), 'order'))
+                        && $projectName === 'Returns'
+                    ) {
                         $selected = 'selected="selected"';
                     }
                     $projectOptions[] = '<option value="' . $projectId . '" ' . $selected . '>' . $projectName . '</option>';
@@ -212,7 +224,7 @@ switch ($config->action) {
                 if (str_contains($message, 'Merge pull request') || str_contains($message, 'Merge branch')) {
                     continue;
                 }
-                $sortKey = $dateCommit->format('YmdHi') . $repository . $message;
+                $sortKey = $dateCommit->getTimestamp() . $repository . $message;
                 $res[$sortKey] = '
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
@@ -245,19 +257,23 @@ switch ($config->action) {
         echo '<h2>GitHub</h2><table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
 
         $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
-                'startDate' => $config->date_from . 'T00:00:00',
-                'endDate'   => $config->date_to . 'T23:59:59',
+                'startDate' => $config->dateFrom->clone()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s'),
+                'endDate'   => $config->dateTo->clone()->setTime(23, 59, 59)->format('Y-m-d\TH:i:s'),
                 'userId'    => $config->tmetric_user_id,
             ]));
         $timeEntries = json_decode((string) $response->getBody(), true);
 
         $res = [];
-        $totalDiff = (new DateTime())->setTime(0, 0, 0);
+        $totalDiff = $config->now->clone()->setTime(0, 0, 0);
 
         foreach ($timeEntries as $timeEntry) {
-            $start = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['startTime'] . 'Z');
-            $end = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['endTime'] . 'Z');
-            $diff = $start->diff($end ?: new DateTime());
+            if (!isset ($timeEntry['project'])) {
+                echo '<h2 style="color:#f00;">Missing project for time entry on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
+                continue;
+            }
+            $start = $config->createCarbon($timeEntry['startTime'] . $config->offset);
+            $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset) : $config->now;
+            $diff = $start->diff($end);
             $totalDiff->add($diff);
             $projectOptions = [];
             foreach ($projects as $projectId => $projectName) {
@@ -287,17 +303,16 @@ switch ($config->action) {
                         <input type="time" name="end" value="' . $end->format('H:i') . '" required>
                         <select name="project" required>' . implode('', $projectOptions) . '</select>',
                     '
-                        <button type="submit">edit</button>',
+                        <button type="submit" onclick="this.disabled = true">edit</button>',
                 ]) . '</td>
                     </form>
-                    
                     <form action="/tmetric.php" method="post" target="_blank">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
                         <input type="hidden" name="date" value="' . $start->format('Y-m-d') . '">
                         <input type="hidden" name="start" value="' . $start->format('H:i') . '">
                         <input type="hidden" name="end" value="' . $end->format('H:i') . '">
-                        <td><button type="submit" onclick="return window.confirm(\'okok?\')">x</button></td>
+                        <td><button type="submit" onclick="return window.confirm(\'okok?\') ? this.disabled = true : false">x</button></td>
                     </form>';
         }
         ksort($res);
@@ -306,22 +321,21 @@ switch ($config->action) {
         break;
 
     case 'report':
-        $projects = $config->getTMetricProjects();
+        $projects = $config->getTMetricProjects($config->addScrumHours);
 
         $tables[0] = '<table class="left">
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>';
+        $rowDate = $config->dateFrom->clone();
         do {
-            $color = $config->backgroundColor($config->dateFrom);
-            $cols = [
-                $config->dateFrom->format('d/m'),
-                $config->dateFrom->format('D'),
-            ];
+            $color = $config->backgroundColor($rowDate);
+            $col1 = $rowDate->format('d/m');
+            $col2 = $rowDate->format('D');
 
-            $tables[0] .= '<tr><td ' . $color . '>' . implode('</td><td ' . $color . '>', $cols) . '</td></tr>';
+            $tables[0] .= '<tr><td ' . $color . '>' . $col1 . '</td><td ' . $color . '>' . $col2 . '</td></tr>';
 
-            $config->dateFrom->modify('+1 day');
-        } while ($config->dateFrom->format('Ymd') <= $config->dateTo->format('Ymd'));
+            $rowDate->modify('+1 day');
+        } while (!$rowDate->isAfter($config->dateTo));
         $tables[0] .= '
             <tr><td bgcolor="#B4C7E7"></td><td bgcolor="#B4C7E7"></td></tr>
         </table>';
@@ -330,59 +344,59 @@ switch ($config->action) {
             $tables[$userId] = '<table class="center left">';
 
             $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
-                    'startDate' => $config->date_from . 'T00:00:00',
-                    'endDate'   => $config->date_to . 'T23:59:59',
+                    'startDate' => $config->dateFrom->clone()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s'),
+                    'endDate'   => $config->dateTo->clone()->setTime(23, 59, 59)->format('Y-m-d\TH:i:s'),
                     'userId'    => $userId,
                 ]));
             $timeEntries = json_decode((string) $response->getBody(), true);
 
             $dateEntries = [];
             foreach ($timeEntries as $timeEntry) {
-                $date = substr($timeEntry['startTime'], 0, 10);
-
                 if (!isset ($timeEntry['project'])) {
                     echo '<h2 style="color:#f00;">Missing project for time entry of <strong>' . $username . '</strong> on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
+                    continue;
                 }
 
+                $date = substr($timeEntry['startTime'], 0, 10);
                 $project = $timeEntry['project']['id'];
                 $dateEntries[$date][$project][] = $timeEntry;
             }
 
             $tables[$userId] .= '<tr><th bgcolor="#B4C7E7" colspan="' . count($projects) . '">' . $username . '</th></tr>';
             $tables[$userId] .= '<tr>';
-            foreach (array_values($projects) as $key => $projectName) {
-                $tables[$userId] .= '<th bgcolor="#B4C7E7" title="' . $projectName . '">P' . ($key + 1) . '</td>';
+            foreach (array_values($projects) as $index => $projectName) {
+                $tables[$userId] .= '<th bgcolor="#B4C7E7" title="' . $projectName . '">P' . ($index + 1) . '</td>';
             }
             $tables[$userId] .= '</tr>';
 
-            $dateFrom = DateTime::createFromFormat('Y-m-d', $config->date_from);
-            $dateTo = DateTime::createFromFormat('Y-m-d', $config->date_to);
-            $counter = array_combine(array_keys($projects), array_fill(0, count($projects), 0));
+            $dateFrom = $config->dateFrom->clone();
+            $dateTo = $config->dateTo->clone();
+            $timePerProject = array_combine(array_keys($projects), array_fill(0, count($projects), 0));
             do {
                 $color = $config->backgroundColor($dateFrom);
                 $cols = [];
 
                 foreach ($projects as $projectId => $projectName) {
-                    $totalDiff = (new DateTime())->setTime(0, 0, 0);
+                    $totalDiff = $config->now->clone()->setTime(0, 0, 0);
                     $startDiff = $totalDiff->getTimestamp();
                     $ongoing = '';
 
                     if (isset($dateEntries[$dateFrom->format('Y-m-d')][$projectId])) {
                         foreach ($dateEntries[$dateFrom->format('Y-m-d')][$projectId] as $timeEntry) {
-                            $start = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['startTime'] . 'Z');
-                            $end = DateTime::createFromFormat(DateTimeInterface::ATOM, $timeEntry['endTime'] . 'Z');
-                            if (!$end) {
+                            $start = $config->createCarbon($timeEntry['startTime'] . $config->offset);
+                            $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset) : $config->now;
+                            if (!$timeEntry['endTime']) {
                                 $ongoing = ' style="color:#f90;" ';
                             }
-                            $diff = $start->diff($end ?: new DateTime());
+                            $diff = $start->diff($end);
                             $totalDiff->add($diff);
                         }
                     }
 
-                    if (isset($_ENV['ADD_SCRUM_HOURS']) && $_ENV['ADD_SCRUM_HOURS'] === 'true' && $projectId === 461355) {
+                    if ($config->addScrumHours && $projectId === 0) {
                         if ($config->backgroundColor($dateFrom) === '') {
                             // Grooming
-                            if (in_array($dateFrom->format('l'), ['Monday'])) {
+                            if ($dateFrom->isMonday()) {
                                 $totalDiff->add(new DateInterval('PT1H'));
                             }
                             // Refinement
@@ -399,7 +413,7 @@ switch ($config->action) {
                     $hoursPer15m = ceil(($hours - 0.125) * 4) / 4;
 
                     $cols[] = $seconds ? '<span title="' . number_format($hours, 2, '.', '') . '"' . $ongoing . '>' . number_format($hoursPer15m, 2, '.', '') . '</span>' : '';
-                    $counter[$projectId] += $hoursPer15m;
+                    $timePerProject[$projectId] += $hoursPer15m;
                 }
 
                 $tables[$userId] .= '<tr><td ' . $color . '>' . implode('</td><td ' . $color . '>', $cols) . '</td></tr>';
@@ -407,11 +421,10 @@ switch ($config->action) {
                 $dateFrom->modify('+1 day');
             } while ($dateFrom->format('Ymd') <= $dateTo->format('Ymd'));
 
-            $total = array_sum($counter);
-            $tables[$userId] .= '<tr>' . array_reduce($counter, function ($carry, $count) use ($total) {
+            $tables[$userId] .= '<tr>' . array_reduce($timePerProject, function ($carry, $count) {
                     return $carry . '<th bgcolor="#B4C7E7">' . ($count ?: '') . '</th>';
                 }) . '</tr>';
-            $tables[$userId] .= '<tr><th bgcolor="#B4C7E7" colspan="' . count($counter) . '">' . ($total ?: '') . '</th></tr>';
+            $tables[$userId] .= '<tr><th bgcolor="#B4C7E7" colspan="' . count($timePerProject) . '">' . (array_sum($timePerProject) ?: '') . '</th></tr>';
             $tables[$userId] .= '</table>';
         }
 

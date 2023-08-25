@@ -5,7 +5,7 @@ UI to browse your GitHub repository commits filtered by a date range and save th
 ## Installation
 
 ```shell
-docker-compose run --rm tmetric composer install --working-dir=/app
+docker compose run --rm tmetric composer install --working-dir=/app
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ docker-compose run --rm tmetric composer install --working-dir=/app
 Run the below command and visit: http://localhost:8080
 
 ```shell
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Configuration

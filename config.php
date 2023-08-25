@@ -2,34 +2,42 @@
 
 declare(strict_types=1);
 
+use Carbon\Carbon;
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 Dotenv\Dotenv::createImmutable(__DIR__)->load();
 
 class Config
 {
+    private DateTimeZone $timezone;
+    public Carbon $now;
+    public string $offset;
     public string $action;
     public array $actions;
-    public string $date_from;
-    public string $date_to;
-    public DateTime $dateFrom;
-    public DateTime $dateTo;
-    public string $github_token;
+    public Carbon $dateFrom;
+    public Carbon $dateTo;
+    private string $github_token;
     public string $github_organization;
     public string $github_user;
-    public string $tmetric_token;
+    private string $tmetric_token;
     public string $tmetric_user_id;
     public string $tmetric_workspace_id;
+    public bool $addScrumHours;
 
     public function __construct()
     {
-        $this->action = $_POST['action'] ?? $_GET['action'] ?? 'sync';
-        $this->actions = explode(',', $_ENV['ALLOWED_ACTIONS']);
-        $this->date_from = $_POST['date_from'] ?? $_GET['date_from'] ?? date('Y-m-d');
-        $this->date_to = $_POST['date_to'] ?? $_GET['date_to'] ?? date('Y-m-d');
+        $this->timezone = new DateTimeZone($_ENV['LOG_TIMEZONE']);
+        $this->now = Carbon::now($this->timezone);
+        $this->offset = $this->now->format('P');
 
-        $this->dateFrom = DateTime::createFromFormat('Y-m-d', $this->date_from);
-        $this->dateTo = DateTime::createFromFormat('Y-m-d', $this->date_to);
+        $this->action = $_POST['action'] ?? $_GET['action'] ?? 'report';
+        $this->actions = explode(',', $_ENV['ALLOWED_ACTIONS']);
+
+        $dateFrom = $_POST['date_from'] ?? $_GET['date_from'] ?? $this->now->format('Y-m-d');
+        $dateTo = $_POST['date_to'] ?? $_GET['date_to'] ?? $this->now->format('Y-m-d');
+        $this->dateFrom = $this->createCarbon($dateFrom, 'Y-m-d');
+        $this->dateTo = $this->createCarbon($dateTo, 'Y-m-d');
 
         $this->github_token = $_ENV['GITHUB_TOKEN'];
         $this->github_organization = $_ENV['GITHUB_ORGANIZATION'];
@@ -38,6 +46,8 @@ class Config
         $this->tmetric_token = $_ENV['TMETRIC_TOKEN'];
         $this->tmetric_user_id = $_ENV['TMETRIC_USER_ID'];
         $this->tmetric_workspace_id = $_ENV['TMETRIC_WORKSPACE_ID'];
+
+        $this->addScrumHours = $_ENV['ADD_SCRUM_HOURS'] === 'true';
     }
 
     public function getContributionsQuery(): string
@@ -51,9 +61,9 @@ class Config
     login: "{$this->github_user}"
   ) {
     contributionsCollection(
-      from: "{$this->date_from}T00:00:00",
-      to: "{$this->date_to}T23:59:59",
-      organizationID: "{$organization['node_id']}"
+      organizationID: "{$organization['node_id']}",
+      from: "{$this->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM)}",
+      to: "{$this->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM)}"
     ) {
       commitContributionsByRepository(
         maxRepositories: 100
@@ -74,7 +84,7 @@ GRAPHQL;
     public function getGithubClient(): Github\Client
     {
         $client = new Github\Client();
-        $client->authenticate($this->github_token, null, Github\Client::AUTH_ACCESS_TOKEN);
+        $client->authenticate($this->github_token, null, Github\AuthMethod::ACCESS_TOKEN);
 
         return $client;
     }
@@ -89,18 +99,27 @@ GRAPHQL;
         ]);
     }
 
-    public function getTMetricProjects(): array
+    public function getTMetricProjects(bool $includeScrumHours = false): array
     {
-        return [
+        $projects = [
+            0      => 'Scrum', // Scrum events e.g. refinement sessions
             271216 => 'API',
             271222 => 'Microservices',
             271224 => 'Admin / V2',
-            271225 => 'Automation Rules',
+//            271225 => 'Automation Rules', // Done
             271226 => 'Performance',
-            461354 => 'Shipment collections',
+//            461354 => 'Collections', // Done
             461355 => 'Rate management',
             461356 => 'Analytics',
+            779162 => 'Returns',
         ];
+        asort($projects);
+
+        if (!$includeScrumHours) {
+            unset($projects[0]);
+        }
+
+        return $projects;
     }
 
     public function getTMetricUsers(): array
@@ -114,30 +133,25 @@ GRAPHQL;
         ];
     }
 
+    public function createCarbon(string $time, string $format = DateTimeInterface::ATOM): Carbon
+    {
+        return Carbon::createFromFormat($format, $time)->setTimezone($this->timezone);
+    }
+
     /**
      * Use bgcolor to make copy to Excel retain background colors.
      */
-    public function backgroundColor(DateTime $dateTime): string
+    public function backgroundColor(Carbon $dateTime): string
     {
         return match (true) {
-            $this->isWeekend($dateTime) => 'bgcolor="#FFC7CE"',
             $this->isHoliday($dateTime) => 'bgcolor="#F4B183"',
-            $this->isFuture($dateTime)  => 'bgcolor="#999"',
+            $dateTime->isWeekend()      => 'bgcolor="#FFC7CE"',
+            $dateTime->isFuture()       => 'bgcolor="#999"',
             default                     => '',
         };
     }
 
-    public function isFuture(DateTime $dateTime): bool
-    {
-        return $dateTime->format('Ymd') > (new DateTime())->format('Ymd');
-    }
-
-    public function isWeekend(DateTime $dateTime): bool
-    {
-        return in_array($dateTime->format('l'), ['Saturday', 'Sunday']);
-    }
-
-    public function isHoliday(DateTime $dateTime): bool
+    public function isHoliday(Carbon $dateTime): bool
     {
         return in_array($dateTime->format('Y-m-d'), [
             '2021-01-01', // New year
