@@ -198,7 +198,7 @@ switch ($config->view) {
                         $selected = 'selected="selected"';
                     }
                     if (
-                        (str_contains($repository, 'app') || str_contains($repository, 'admin') || str_contains($repository, 'backoffice'))
+                        in_array($repository, ['app', 'admin', 'backoffice'])
                         && $projectName === 'Admin / V2'
                     ) {
                         $selected = 'selected="selected"';
@@ -210,7 +210,13 @@ switch ($config->view) {
                         $selected = 'selected="selected"';
                     }
                     if (
-                        (str_contains(strtolower($message), 'return') || str_contains(strtolower($message), 'order'))
+                        (str_contains(strtolower($message), 'contract') || str_contains(strtolower($message), 'currency') || str_contains(strtolower($message), 'rate'))
+                        && $projectName === 'Rate management'
+                    ) {
+                        $selected = 'selected="selected"';
+                    }
+                    if (
+                        ($repository === 'returns-portal' || (str_contains(strtolower($message), 'return') || str_contains(strtolower($message), 'order')))
                         && $projectName === 'Returns'
                     ) {
                         $selected = 'selected="selected"';
@@ -268,8 +274,8 @@ switch ($config->view) {
                 echo '<h2 style="color:#f00;">Missing project for time entry on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
                 continue;
             }
-            $start = $config->createCarbon($timeEntry['startTime'] . $config->offset);
-            $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset) : $config->now;
+            $start = $config->createCarbon($timeEntry['startTime'] . $config->offset)->setTimezone($config->offset);
+            $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset)->setTimezone($config->offset) : $config->now;
             $diff = $start->diff($end);
             $totalDiff->add($diff);
             $projectOptions = [];
@@ -380,8 +386,8 @@ switch ($config->view) {
 
                     if (isset($dateEntries[$dateFrom->format('Y-m-d')][$projectId])) {
                         foreach ($dateEntries[$dateFrom->format('Y-m-d')][$projectId] as $timeEntry) {
-                            $start = $config->createCarbon($timeEntry['startTime'] . $config->offset);
-                            $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset) : $config->now;
+                            $start = $config->createCarbon($timeEntry['startTime'] . $config->offset)->setTimezone($config->offset);
+                            $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset)->setTimezone($config->offset) : $config->now;
                             if (!$timeEntry['endTime']) {
                                 $ongoing = ' style="color:#f90;" ';
                             }
