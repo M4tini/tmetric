@@ -135,7 +135,10 @@ GRAPHQL;
 
     public function createCarbon(string $time, string $format = DateTimeInterface::ATOM): Carbon
     {
-        return Carbon::createFromFormat($format, $time)->setTimezone($this->timezone);
+        // When the supplied time is in Y-m-d format, we should assume it's targeting the current timezone.
+        $timeZone = ($format === 'Y-m-d') ? $this->timezone : null;
+
+        return Carbon::createFromFormat($format, $time, $timeZone)->setTimezone($this->timezone);
     }
 
     /**
