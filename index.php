@@ -103,12 +103,12 @@ switch ($config->view) {
 
         $repositories = [];
         foreach ($results['data']['user']['contributionsCollection']['commitContributionsByRepository'] as $contribution) {
-            $repositories[] = $contribution['repository']['name'];
+            $repositories[$contribution['repository']['url']] = $contribution['repository']['name'];
         }
         $projects = $config->getTMetricProjects();
 
         $res = [];
-        foreach ($repositories as $repository) {
+        foreach ($repositories as $repositoryUrl => $repository) {
             $commits = new Github\Api\Repository\Commits($config->getGithubClient());
 
             try {
@@ -176,17 +176,17 @@ switch ($config->view) {
                 $res[$sortKey] = '
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
-                        $commit['commit']['committer']['name'],
+                        '<a href="' . $commit['committer']['html_url'] . '" target="_blank">' . $commit['commit']['committer']['name'] . '</a>',
                         implode('<br>', array_filter([
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('D, d M Y') . '</span>',
-                            $dateCommit->format('D, d M Y'),
+                            '<a href="https://github.com/' . $config->github_user . '?tab=overview&from=' . $dateCommit->format('Y-m-d') . '&to=' . $dateCommit->format('Y-m-d') . '" target="_blank">' . $dateCommit->format('D, d M Y') . '</a>',
                         ])),
                         implode('<br>', array_filter([
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('H:i') . '</span>',
                             $dateCommit->format('H:i'),
                         ])),
-                        $repository,
-                        htmlentities($message),
+                        '<a href="' . $repositoryUrl . '" target="_blank">' . $repository . '</a>',
+                        '<a href="' . $commit['html_url'] . '" target="_blank">' . htmlentities($message) . '</a>',
                         '
                             <input type="hidden" name="method" value="post">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
@@ -202,7 +202,14 @@ switch ($config->view) {
         }
         ksort($res);
 
-        echo '<h2>GitHub</h2><table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
+        echo '
+    <h2>
+      <a href="https://github.com/' . $config->github_user . '?tab=overview&from=' . $config->dateFrom->format('Y-m-d') . '&to=' . $config->dateTo->format('Y-m-d') . '" target="_blank">
+        <img class="icon" src="https://github.githubassets.com/favicons/favicon.svg" alt="GitHub" title="View on GitHub" />
+        GitHub
+      </a>
+    </h2>
+    <table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
 
         $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
                 'startDate' => $config->dateFrom->clone()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s'),
@@ -237,10 +244,10 @@ switch ($config->view) {
             $res[$sortKey] = '
                     <form action="/tmetric.php" method="post" target="_blank">
                         <td>' . implode('</td><td>', [
-                    $start->format('D, d M Y'),
+                    '<a href="https://app.tmetric.com/#/tracker/' . $config->tmetric_workspace_id . '/?day=' . $start->format('Ymd') . '" target="_blank">' . $start->format('D, d M Y') . '</a>',
                     $start->format('H:i') . ' - ' . $end->format('H:i'),
                     $diff->format('%h h %i m'),
-                    $timeEntry['project']['name'],
+                    '<a href="https://app.tmetric.com/#/account/' . $config->tmetric_workspace_id . '/projects/' . $timeEntry['project']['id'] . '" target="_blank">' . $timeEntry['project']['name'] . '</a>',
                     htmlentities($note),
                     '
                         <input type="hidden" name="method" value="put">
@@ -265,7 +272,14 @@ switch ($config->view) {
         }
         ksort($res);
 
-        echo '<h2>TMetric (' . $totalDiff->format('G \h i \m') . ')</h2><table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
+        echo '
+    <h2>
+      <a href="https://app.tmetric.com/#/tracker/' . $config->tmetric_workspace_id . '/?day=' . $config->dateFrom->format('Ymd') . '" target="_blank">
+        <img class="icon" src="https://app.tmetric.com/favicon.png" alt="TMetric" title="View on TMetric" />
+        TMetric (' . $totalDiff->format('G \h i \m') . ')
+      </a>
+    </h2>
+    <table><tr>' . implode('</tr><tr>', $res) . '</tr></table>';
         break;
 
     case 'report':

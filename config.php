@@ -69,7 +69,8 @@ class Config
         maxRepositories: 100
       ) {
         repository {
-          name
+          name,
+          url
         },
         contributions {
           totalCount

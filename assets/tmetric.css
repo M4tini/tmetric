@@ -8,8 +8,12 @@ a {
   text-decoration: none;
 }
 
+a:hover {
+  text-decoration: underline;
+}
+
 body {
-  background: #eee;
+  background: #ddd;
 }
 
 button {
@@ -19,6 +23,11 @@ button {
 
 form {
   margin: 0;
+}
+
+h2 a {
+  display: inline-flex;
+  align-items: center;
 }
 
 input {
@@ -70,6 +79,11 @@ tr.center td {
 
 .gray-text {
   color: #ccc;
+}
+
+.icon {
+  height: 24px;
+  margin-right: 8px;
 }
 
 #loading {
