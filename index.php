@@ -16,7 +16,7 @@ echo '
     <script src="/assets/tmetric.js?d=' . filemtime('assets/tmetric.js') . '"></script>
   </head>
   <body>
-    <form action="/" method="post">
+    <form action="/" method="post" onsubmit="document.getElementById(\'loading\').style.display = \'block\'">
     <table>
       <tr>
         <td>
@@ -62,11 +62,8 @@ echo '
           <input type="date" name="date_to" value="' . $config->dateTo->format('Y-m-d') . '"/>
         </td>
         <td class="center">
-          <a href="#" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1);document.forms[0].submit()" title="Yesterday">◀</a>
-          <a href="#" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1);document.forms[0].submit()" title="Tomorrow">▶</a>
-          <br>
-          <a href="#" onclick="modifyDate(\'date_from\', -7);modifyDate(\'date_to\', -7);document.forms[0].submit()" title="Last week">◀◀</a>
-          <a href="#" onclick="modifyDate(\'date_from\', 7);modifyDate(\'date_to\', 7);document.forms[0].submit()" title="Next week">▶▶</a>
+          <button type="submit" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1)" title="Yesterday">◀</button>
+          <button type="submit" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1)" title="Tomorrow">▶</button>
         </td>
         <td>
           <button type="submit">search</button>
@@ -75,19 +72,19 @@ echo '
           <a href="/" onclick="return window.confirm(\'okok?\')">reset</a>
         </td>
         <td class="months">
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 1);document.forms[0].view.value = \'report\';document.forms[0].submit()">jan</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 2);document.forms[0].view.value = \'report\';document.forms[0].submit()">feb</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 3);document.forms[0].view.value = \'report\';document.forms[0].submit()">mrt</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 4);document.forms[0].view.value = \'report\';document.forms[0].submit()">apr</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 5);document.forms[0].view.value = \'report\';document.forms[0].submit()">may</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 6);document.forms[0].view.value = \'report\';document.forms[0].submit()">jun</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 1);document.forms[0].view.value = \'report\'">jan</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 2);document.forms[0].view.value = \'report\'">feb</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 3);document.forms[0].view.value = \'report\'">mrt</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 4);document.forms[0].view.value = \'report\'">apr</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 5);document.forms[0].view.value = \'report\'">may</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 6);document.forms[0].view.value = \'report\'">jun</button>
           <br>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 7);document.forms[0].view.value = \'report\';document.forms[0].submit()">jul</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 8);document.forms[0].view.value = \'report\';document.forms[0].submit()">aug</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 9);document.forms[0].view.value = \'report\';document.forms[0].submit()">sep</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 10);document.forms[0].view.value = \'report\';document.forms[0].submit()">oct</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 11);document.forms[0].view.value = \'report\';document.forms[0].submit()">nov</button>
-          <button type="button" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 12);document.forms[0].view.value = \'report\';document.forms[0].submit()">dec</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 7);document.forms[0].view.value = \'report\'">jul</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 8);document.forms[0].view.value = \'report\'">aug</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 9);document.forms[0].view.value = \'report\'">sep</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 10);document.forms[0].view.value = \'report\'">oct</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 11);document.forms[0].view.value = \'report\'">nov</button>
+          <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 12);document.forms[0].view.value = \'report\'">dec</button>
         </td>
       </tr>
     </table>
@@ -433,6 +430,9 @@ switch ($config->view) {
 }
 
 echo '
+    <div id="loading">
+      <div class="lds-dual-ring"/>
+    </div>
   </body>
 </html>
 ';
