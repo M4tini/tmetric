@@ -92,61 +92,6 @@ echo '
 ';
 
 switch ($config->view) {
-    case 'github-user':
-        $user = new Github\Api\User($config->getGithubClient());
-        var_dump($user->show($config->github_user));
-        break;
-
-    case 'github-organization':
-        $organizations = new Github\Api\Organization($config->getGithubClient());
-        var_dump($organizations->show($config->github_organization));
-        break;
-
-    case 'github-repositories':
-        $repositories = new Github\Api\Repo($config->getGithubClient());
-        var_dump($repositories->org($config->github_organization, [
-            'sort'     => 'full_name',
-            'per_page' => 100, // max 100
-            'page'     => 1,
-        ]));
-        break;
-
-    case 'github-commits':
-        $commits = new Github\Api\Repository\Commits($config->getGithubClient());
-        var_dump('Hardcoded repository: api');
-        var_dump($commits->all($config->github_organization, 'api', [
-            'author'   => $config->github_user,
-            'per_page' => 100, // max 100
-            'page'     => 1,
-            'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
-            'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
-        ]));
-        break;
-
-    case 'github-contributions':
-        $graphQL = new Github\Api\GraphQL($config->getGithubClient());
-        $results = $graphQL->execute($config->getContributionsQuery());
-        var_dump($results['data']['user']['contributionsCollection']['commitContributionsByRepository']);
-        break;
-
-    case 'tmetric-projects':
-        $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries/projects?' . http_build_query([
-                'userId' => $config->tmetric_user_id,
-            ]));
-        $projects = json_decode((string) $response->getBody(), true);
-        var_dump($projects);
-        break;
-
-    case 'tmetric-time-entries':
-        $response = $config->getTMetricClient()->get('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query([
-                'startDate' => $config->dateFrom->clone()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s'),
-                'endDate'   => $config->dateTo->clone()->setTime(23, 59, 59)->format('Y-m-d\TH:i:s'),
-                'userId'    => $config->tmetric_user_id,
-            ]));
-        $timeEntries = json_decode((string) $response->getBody(), true);
-        var_dump($timeEntries);
-        break;
-
     case 'sync':
         if ($config->dateFrom->diffInDays($config->dateTo) > 7) {
             var_dump('Max date range is 7 days to avoid API overload.');
