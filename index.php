@@ -241,7 +241,7 @@ switch ($config->view) {
                             $dateCommit->format('H:i'),
                         ])),
                         $repository,
-                        $message,
+                        htmlentities($message),
                         '
                             <input type="hidden" name="method" value="post">
                             <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
@@ -296,7 +296,7 @@ switch ($config->view) {
                     $start->format('H:i') . ' - ' . $end->format('H:i'),
                     $diff->format('%h h %i m'),
                     $timeEntry['project']['name'],
-                    $note,
+                    htmlentities($note),
                     '
                         <input type="hidden" name="method" value="put">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
