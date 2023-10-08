@@ -61,15 +61,13 @@ echo '
           Date to<br>
           <input type="date" name="date_to" value="' . $config->dateTo->format('Y-m-d') . '"/>
         </td>
+        <td>
+          <!-- This needs to be the first submit button in the form to avoid issues when pressing return in an input -->
+          <button type="submit">search</button>
+        </td>
         <td class="center">
           <button type="submit" onclick="modifyDate(\'date_from\', -1);modifyDate(\'date_to\', -1)" title="Yesterday">◀</button>
           <button type="submit" onclick="modifyDate(\'date_from\', 1);modifyDate(\'date_to\', 1)" title="Tomorrow">▶</button>
-        </td>
-        <td>
-          <button type="submit">search</button>
-        </td>
-        <td>
-          <a href="/" onclick="return window.confirm(\'okok?\')">reset</a>
         </td>
         <td class="months">
           <button type="submit" onclick="targetMonth(\'' . $config->dateFrom->format('Y') . '\', 1);document.forms[0].view.value = \'report\'">jan</button>
