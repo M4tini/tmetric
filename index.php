@@ -187,7 +187,7 @@ switch ($config->view) {
                         '<a href="' . $commit['html_url'] . '" target="_blank">' . htmlentities($message) . '</a>',
                         '
                             <input type="hidden" name="method" value="post">
-                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', $message))) . '" required><br>
+                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', htmlentities($message)))) . '" required><br>
                             <input type="date" name="date" value="' . $dateCommit->format('Y-m-d') . '" required>
                             <input type="time" name="start" value="' . (clone $dateCommit)->sub(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
                             <input type="time" name="end" value="' . $dateCommit->format($_ENV['LOG_TIME_FORMAT']) . '" required>
@@ -250,7 +250,7 @@ switch ($config->view) {
                     '
                         <input type="hidden" name="method" value="put">
                         <input type="hidden" name="id" value="' . $timeEntry['id'] . '">
-                        <input type="text" name="note" value="' . $note . '" required><br>
+                        <input type="text" name="note" value="' . htmlentities($note) . '" required><br>
                         <input type="date" name="date" value="' . $start->format('Y-m-d') . '" required>
                         <input type="time" name="start" value="' . $start->format('H:i') . '" required>
                         <input type="time" name="end" value="' . $end->format('H:i') . '" required>
