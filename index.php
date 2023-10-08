@@ -222,13 +222,13 @@ switch ($config->view) {
         foreach ($timeEntries as $timeEntry) {
             if (!isset ($timeEntry['project'])) {
                 echo '<h2 style="color:#f00;">Missing project for time entry on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
-                continue;
+                $timeEntry['project'] = ['id' => 0, 'name' => 'Undefined project'];
             }
             $start = $config->createCarbon($timeEntry['startTime'] . $config->offset)->setTimezone($config->offset);
             $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset)->setTimezone($config->offset) : $config->now;
             $diff = $start->diff($end);
             $totalDiff->add($diff);
-            $projectOptions = [];
+            $projectOptions = ['<option value="0">Undefined project</option>'];
             foreach ($projects as $projectId => $projectName) {
                 $selected = '';
                 if ($timeEntry['project']['id'] === $projectId) {
@@ -314,7 +314,7 @@ switch ($config->view) {
             foreach ($timeEntries as $timeEntry) {
                 if (!isset ($timeEntry['project'])) {
                     echo '<h2 style="color:#f00;">Missing project for time entry of <strong>' . $username . '</strong> on ' . substr($timeEntry['startTime'], 0, 10) . '</h2>';
-                    continue;
+                    $timeEntry['project'] = ['id' => 0, 'name' => 'Undefined project'];
                 }
 
                 $date = substr($timeEntry['startTime'], 0, 10);
