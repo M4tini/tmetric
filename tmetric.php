@@ -43,4 +43,9 @@ var_dump($result);
 
 echo '<a href="https://app.tmetric.com/#/tracker/' . $config->tmetric_workspace_id . '/?day=' . str_replace('-', '', $_POST['date']) . '" target="_blank">check</a>';
 echo '<style>body { cursor: crosshair; height: 100%; margin: 0; }</style>';
-echo '<script>document.body.onclick = () => window.close()</script>';
+echo <<<SCRIPT
+<script>
+document.body.onclick = () => window.close()
+document.addEventListener('keydown', function (event) { if (event.key === 'Enter') window.close() })
+</script>
+SCRIPT;
