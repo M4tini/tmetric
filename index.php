@@ -127,7 +127,7 @@ switch ($config->view) {
             }
 
             foreach ($commitList as $commit) {
-                $message = $commit['commit']['message'];
+                $message = strtolower($commit['commit']['message']);
                 $dateAuth = $config->createCarbon($commit['commit']['author']['date']);
                 $dateCommit = $config->createCarbon($commit['commit']['committer']['date']);
                 $sameDates = $dateAuth->diffInSeconds($dateCommit) === 0;
@@ -147,19 +147,19 @@ switch ($config->view) {
                         $selected = 'selected="selected"';
                     }
                     if (
-                        (str_contains($repository, 'infrastructure') || str_contains(strtolower($message), 'queue'))
+                        (str_contains($repository, 'infrastructure') || str_contains($message, 'queue'))
                         && $projectName === 'Performance'
                     ) {
                         $selected = 'selected="selected"';
                     }
                     if (
-                        (str_contains(strtolower($message), 'contract') || str_contains(strtolower($message), 'currency') || str_contains(strtolower($message), 'rate'))
+                        (str_contains($message, 'contract') || str_contains($message, 'currency') || str_contains($message, 'rate'))
                         && $projectName === 'Rate management'
                     ) {
                         $selected = 'selected="selected"';
                     }
                     if (
-                        ($repository === 'returns-portal' || (str_contains(strtolower($message), 'return') || str_contains(strtolower($message), 'order')))
+                        ($repository === 'returns-portal' || (str_contains($message, 'return') || str_contains($message, 'order') || str_contains($message, 'payment') || str_contains($message, 'mollie')))
                         && $projectName === 'Returns'
                     ) {
                         $selected = 'selected="selected"';
@@ -167,7 +167,7 @@ switch ($config->view) {
                     $projectOptions[] = '<option value="' . $projectId . '" ' . $selected . '>' . $projectName . '</option>';
                 }
 
-                if (str_contains($message, 'Merge pull request') || str_contains($message, 'Merge branch')) {
+                if (str_contains($message, 'merge pull request') || str_contains($message, 'merge branch')) {
                     continue;
                 }
                 $sortKey = $dateCommit->getTimestamp() . $repository . $message;
@@ -184,10 +184,10 @@ switch ($config->view) {
                             $dateCommit->format('H:i'),
                         ])),
                         '<a href="' . $repositoryUrl . '" target="_blank">' . $repository . '</a>',
-                        '<a href="' . $commit['html_url'] . '" target="_blank">' . htmlentities($message) . '</a>',
+                        '<a href="' . $commit['html_url'] . '" target="_blank">' . htmlentities($commit['commit']['message']) . '</a>',
                         '
                             <input type="hidden" name="method" value="post">
-                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', htmlentities($message)))) . '" required><br>
+                            <input type="text" name="note" value="' . ucfirst(trim(preg_replace('/:\w+:/', '', htmlentities($commit['commit']['message'])))) . '" required><br>
                             <input type="date" name="date" value="' . $dateCommit->format('Y-m-d') . '" required>
                             <input type="time" name="start" value="' . (clone $dateCommit)->sub(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
                             <input type="time" name="end" value="' . $dateCommit->format($_ENV['LOG_TIME_FORMAT']) . '" required>
