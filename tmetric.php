@@ -2,9 +2,15 @@
 
 declare(strict_types=1);
 
+use Carbon\Carbon;
+
 require_once __DIR__ . '/config.php';
 
 $config = new Config();
+
+$endDate = ($_POST['end'] === '00:00')
+    ? Carbon::createFromFormat('Y-m-d', $_POST['date'])->addDay()->format('Y-m-d')
+    : $_POST['date'];
 
 $response = match ($_POST['method']) {
     'post' => $config->getTMetricClient()->post('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries?' . http_build_query(['userId' => $config->tmetric_user_id]), [
@@ -14,7 +20,7 @@ $response = match ($_POST['method']) {
             ],
             'note'      => $_POST['note'],
             'startTime' => $_POST['date'] . 'T' . $_POST['start'],
-            'endTime'   => $_POST['date'] . 'T' . $_POST['end'],
+            'endTime'   => $endDate . 'T' . $_POST['end'],
         ],
     ]),
     'put' => $config->getTMetricClient()->put('v3/accounts/' . $config->tmetric_workspace_id . '/timeentries/' . $_POST['id'], [
@@ -24,7 +30,7 @@ $response = match ($_POST['method']) {
             ],
             'note'      => $_POST['note'],
             'startTime' => $_POST['date'] . 'T' . $_POST['start'],
-            'endTime'   => $_POST['date'] . 'T' . $_POST['end'],
+            'endTime'   => $endDate . 'T' . $_POST['end'],
         ],
     ]),
     // For some reason, the delete request documented in their swagger does not delete anything, so we simulate the app.
@@ -32,7 +38,7 @@ $response = match ($_POST['method']) {
         GuzzleHttp\RequestOptions::JSON => [
             [
                 'startTime' => $_POST['date'] . 'T' . $_POST['start'],
-                'endTime'   => $_POST['date'] . 'T' . $_POST['end'],
+                'endTime'   => $endDate . 'T' . $_POST['end'],
             ],
         ],
     ]),
