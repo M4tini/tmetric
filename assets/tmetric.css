@@ -61,6 +61,7 @@ table {
 td,
 th {
   height: 28px;
+  line-height: 1;
   border: 1px solid #444;
   padding: 4px 8px;
 }
