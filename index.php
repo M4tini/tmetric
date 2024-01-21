@@ -256,7 +256,7 @@ switch ($config->view) {
                         <input type="time" name="end" value="' . $end->format('H:i') . '" required>
                         <select name="project" required>' . implode('', $projectOptions) . '</select>',
                     '
-                        <button type="submit" onclick="this.disabled = true">edit</button>',
+                        <button type="submit" onclick="this.form.submit();this.disabled = true">edit</button>',
                 ]) . '</td>
                     </form>
                     <form action="/tmetric.php" method="post" target="_blank">
