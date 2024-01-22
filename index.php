@@ -256,7 +256,7 @@ switch ($config->view) {
                         <input type="time" name="end" value="' . $end->format('H:i') . '" required>
                         <select name="project" required>' . implode('', $projectOptions) . '</select>',
                     '
-                        <button type="submit" onclick="this.form.submit();this.disabled = true">edit</button>',
+                        <button type="submit" onclick="this.form.submit(); this.disabled = true">edit</button>',
                 ]) . '</td>
                     </form>
                     <form action="/tmetric.php" method="post" target="_blank">
@@ -265,7 +265,7 @@ switch ($config->view) {
                         <input type="hidden" name="date" value="' . $start->format('Y-m-d') . '">
                         <input type="hidden" name="start" value="' . $start->format('H:i') . '">
                         <input type="hidden" name="end" value="' . $end->format('H:i') . '">
-                        <td><button type="submit" onclick="return window.confirm(\'okok?\') ? this.disabled = true : false">x</button></td>
+                        <td><button type="submit" onclick="if (window.confirm(\'okok?\')) { this.form.submit(); this.disabled = true; return true } return false">x</button></td>
                     </form>';
         }
         ksort($res);
