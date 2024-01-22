@@ -345,11 +345,14 @@ switch ($config->view) {
                         foreach ($dateEntries[$dateFrom->format('Y-m-d')][$projectId] as $timeEntry) {
                             $start = $config->createCarbon($timeEntry['startTime'] . $config->offset)->setTimezone($config->offset);
                             $end = $timeEntry['endTime'] ? $config->createCarbon($timeEntry['endTime'] . $config->offset)->setTimezone($config->offset) : $config->now;
+                            $diff = $start->diff($end);
+                            $totalDiff->add($diff);
+                            if ($diff->h > 8) {
+                                $ongoing = ' style="border:1px solid #f00;" ';
+                            }
                             if (!$timeEntry['endTime']) {
                                 $ongoing = ' style="color:#f90;" ';
                             }
-                            $diff = $start->diff($end);
-                            $totalDiff->add($diff);
                         }
                     }
 
