@@ -113,6 +113,7 @@ GRAPHQL;
             461355 => 'Rate management',
             461356 => 'Analytics',
             779162 => 'Returns',
+            808008 => 'DevOps',
         ];
         asort($projects);
 
@@ -198,6 +199,16 @@ GRAPHQL;
             '2024-05-20', // Pentecost
             '2024-12-25', // Christmas
             '2024-12-26', // Christmas
+            '2025-01-01', // New year
+            '2025-04-20', // Easter
+            '2025-04-21', // Easter
+            '2025-04-26', // King
+            '2025-05-05', // Liberation (every 5 years)
+            '2025-05-29', // Ascension
+            '2025-06-08', // Pentecost
+            '2025-06-09', // Pentecost
+            '2025-12-25', // Christmas
+            '2025-12-26', // Christmas
         ]);
     }
 }

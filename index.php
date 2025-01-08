@@ -35,13 +35,6 @@ echo '
 $views = [
     'sync',
     'report',
-    'github-user',
-    'github-organization',
-    'github-repositories',
-    'github-commits',
-    'github-contributions',
-    'tmetric-projects',
-    'tmetric-time-entries',
 ];
 foreach ($views as $view) {
     if (in_array($view, $config->views) || $config->views === ['*']) {
