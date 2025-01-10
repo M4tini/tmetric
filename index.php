@@ -193,6 +193,28 @@ switch ($config->view) {
         }
         ksort($res);
 
+        if (empty($res)) {
+            $projectOptions = [];
+            foreach ($projects as $projectId => $projectName) {
+                $projectOptions[] = '<option value="' . $projectId . '">' . $projectName . '</option>';
+            }
+            $res[] = '
+                        <form action="/tmetric.php" method="post" target="_blank">
+                          <td colspan="5">No commits today, do you want to log something manually?</td>
+                          <td>
+                            <input type="hidden" name="method" value="post">
+                            <input type="text" name="note" required><br>
+                            <input type="date" name="date" value="' . $config->dateFrom->format('Y-m-d') . '" required>
+                            <input type="time" name="start" value="' . $config->dateFrom->sub(new DateInterval($_ENV['LOG_TIME_INTERVAL']))->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <input type="time" name="end" value="' . $config->dateTo->format($_ENV['LOG_TIME_FORMAT']) . '" required>
+                            <select name="project" required>' . implode('', $projectOptions) . '</select>
+                          </td>
+                          <td>
+                            <button type="submit">log</button>
+                          </td>
+                        </form>';
+        }
+
         echo '
     <h2>
       <a href="https://github.com/' . $config->github_user . '?tab=overview&from=' . $config->dateFrom->format('Y-m-d') . '&to=' . $config->dateTo->format('Y-m-d') . '" target="_blank">
