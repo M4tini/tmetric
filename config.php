@@ -15,6 +15,7 @@ class Config
     public string $offset;
     public string $view;
     public array $views;
+    public array $buttons;
     public Carbon $dateFrom;
     public Carbon $dateTo;
     private string $github_token;
@@ -33,6 +34,7 @@ class Config
 
         $this->view = $_POST['view'] ?? $_GET['view'] ?? 'report';
         $this->views = explode(',', $_ENV['ALLOWED_ACTIONS']);
+        $this->buttons = explode(',', $_ENV['ALLOWED_BUTTONS'] ?? 'day');
 
         $dateFrom = $_POST['date_from'] ?? $_GET['date_from'] ?? $this->now->format('Y-m-d');
         $dateTo = $_POST['date_to'] ?? $_GET['date_to'] ?? $this->now->format('Y-m-d');
