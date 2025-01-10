@@ -193,14 +193,13 @@ switch ($config->view) {
         }
         ksort($res);
 
-        if (empty($res)) {
-            $projectOptions = [];
-            foreach ($projects as $projectId => $projectName) {
-                $projectOptions[] = '<option value="' . $projectId . '">' . $projectName . '</option>';
-            }
-            $res[] = '
+        $projectOptions = [];
+        foreach ($projects as $projectId => $projectName) {
+            $projectOptions[] = '<option value="' . $projectId . '">' . $projectName . '</option>';
+        }
+        $res[] = '
                         <form action="/tmetric.php" method="post" target="_blank">
-                          <td colspan="5">No commits today, do you want to log something manually?</td>
+                          <td colspan="5">Do you want to log something else?</td>
                           <td>
                             <input type="hidden" name="method" value="post">
                             <input type="text" name="note" required><br>
@@ -213,7 +212,6 @@ switch ($config->view) {
                             <button type="submit">log</button>
                           </td>
                         </form>';
-        }
 
         echo '
     <h2>
