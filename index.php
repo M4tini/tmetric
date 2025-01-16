@@ -153,16 +153,16 @@ switch ($config->view) {
                         if (
                             $dateFrom->lte($dateCommit)
                             && $dateTo->gte($dateCommit)
-                            && $commit['commit']['committer']['user']['login'] === $config->github_user
+                            && $commit['commit']['author']['user']['login'] === $config->github_user
                         ) {
                             $commit['pull_number'] = $pullRequest['number'];
                             $commit['pull_url'] = $pullRequest['url'];
 
                             // GraphQL response structure not the same as the REST response, so we populate some fields.
+                            $commit['author']['html_url'] = $commit['commit']['author']['user']['url'];
                             $commit['commit']['author']['date'] = $commit['commit']['authoredDate'];
+                            $commit['commit']['author']['name'] = $commit['commit']['author']['user']['name'];
                             $commit['commit']['committer']['date'] = $commit['commit']['committedDate'];
-                            $commit['committer']['html_url'] = $commit['commit']['committer']['user']['url'];
-                            $commit['commit']['committer']['name'] = $commit['commit']['committer']['user']['name'];
                             $commit['html_url'] = $commit['url'];
 
                             $commitList[] = $commit;
@@ -232,7 +232,7 @@ switch ($config->view) {
                 $res[$sortKey] = '
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
-                        '<a href="' . $commit['committer']['html_url'] . '" target="_blank">' . $commit['commit']['committer']['name'] . '</a>',
+                        '<a href="' . $commit['author']['html_url'] . '" target="_blank">' . $commit['commit']['author']['name'] . '</a>',
                         implode('<br>', array_filter([
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('D, d M Y') . '</span>',
                             '<a href="https://github.com/' . $config->github_user . '?tab=overview&from=' . $dateCommit->format(

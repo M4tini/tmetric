@@ -94,6 +94,13 @@ class Config
             url,
             commit {
               authoredDate,
+              author {
+                user {
+                  login,
+                  name,
+                  url
+                }
+              }
               committedDate,
               committer {
                 user {
