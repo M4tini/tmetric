@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "m4tini/tmetric",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "UI to browse your GitHub repository commits filtered by a date range and save them as time entries in TMetric.",
     "keywords": [
         "laravel",
         "framework"
@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "inertiajs/inertia-laravel": "^2.0",
         "knplabs/github-api": "^3.11",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9"

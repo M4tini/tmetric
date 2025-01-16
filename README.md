@@ -5,15 +5,18 @@ UI to browse your GitHub repository commits filtered by a date range and save th
 ## Installation
 
 ```shell
-docker compose run --rm tmetric composer install --working-dir=/app
+sail up -d
+sail composer install
+sail npm install
 ```
 
 ## Usage
 
-Run the below command and visit: http://localhost:8080
+Run the below commands and visit: http://localhost:8080
 
 ```shell
-docker compose up -d
+sail up -d
+sail npm run dev
 ```
 
 ## Configuration
@@ -49,6 +52,6 @@ The default length of a proposed time entry is 1 hour, defined by the interval `
 
 ## References
 
+- https://docs.github.com/en/graphql
 - https://docs.github.com/en/rest
-- https://app.tmetric.com/help/index.html
-- https://tmetric.com/help/data-integrations/how-to-use-tmetric-rest-api
+- https://app.tmetric.com/api-docs/
