@@ -8,6 +8,8 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 Dotenv\Dotenv::createImmutable(__DIR__)->load();
 
+ini_set('xdebug.var_display_max_depth', 10);
+
 class Config
 {
     private DateTimeZone $timezone;
@@ -59,7 +61,7 @@ class Config
 
         return <<<GRAPHQL
 {
-  user(
+  user (
     login: "{$this->github_user}"
   ) {
     contributionsCollection(
@@ -67,16 +69,55 @@ class Config
       from: "{$this->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM)}",
       to: "{$this->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM)}"
     ) {
-      commitContributionsByRepository(
+      commitContributionsByRepository (
         maxRepositories: 100
       ) {
+        contributions {
+          totalCount
+        },
+        repository {
+          name,
+          url
+        }
+      }
+    },
+    pullRequests (
+      first: 100,
+      states: OPEN
+    ) {
+      nodes {
+        number,
+        commits (
+          first: 100
+        ) {
+          nodes {
+            url,
+            commit {
+              authoredDate,
+              author {
+                user {
+                  login,
+                  name,
+                  url
+                }
+              }
+              committedDate,
+              committer {
+                user {
+                  login,
+                  name,
+                  url
+                }
+              }
+              message
+            }
+          }
+        }
         repository {
           name,
           url
         },
-        contributions {
-          totalCount
-        }
+        url
       }
     }
   }

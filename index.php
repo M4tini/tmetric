@@ -106,29 +106,69 @@ switch ($config->view) {
         $results = $graphQL->execute($config->getContributionsQuery());
 
         $repositories = [];
+        $repositoriesWithContributions = [];
+        $repositoriesWithPullRequests = [];
         foreach ($results['data']['user']['contributionsCollection']['commitContributionsByRepository'] as $contribution) {
             $repositories[$contribution['repository']['url']] = $contribution['repository']['name'];
+            $repositoriesWithContributions[$contribution['repository']['name']][] = $contribution;
+        }
+        foreach ($results['data']['user']['pullRequests']['nodes'] as $pullRequest) {
+            $repositories[$pullRequest['repository']['url']] = $pullRequest['repository']['name'];
+            $repositoriesWithPullRequests[$pullRequest['repository']['name']][] = $pullRequest;
         }
         $projects = $config->getTMetricProjects();
 
         $res = [];
         foreach ($repositories as $repositoryUrl => $repository) {
-            $commits = new Github\Api\Repository\Commits($config->getGithubClient());
+            $commitList = [];
 
-            try {
-                $commitList = $commits->all($config->github_organization, $repository, [
-                    'author'   => $config->github_user,
-                    'per_page' => 100, // max 100
-                    'page'     => 1,
-                    'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
-                    'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
-                ]);
-            } catch (Github\Exception\RuntimeException $exception) {
-                var_dump(
-                    'Error retrieving commits for ' . $config->github_organization . '/' . $repository . ' - ' . $exception->getMessage(
-                    ),
-                );
-                continue;
+            // Overwrite the empty commit list with commits made to the default branch of this repository.
+            if (array_key_exists($repository, $repositoriesWithContributions)) {
+                try {
+                    $commits = new Github\Api\Repository\Commits($config->getGithubClient());
+                    $commitList = $commits->all($config->github_organization, $repository, [
+                        'author'   => $config->github_user,
+                        'per_page' => 100, // max 100
+                        'page'     => 1,
+                        'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
+                        'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
+                    ]);
+                } catch (Github\Exception\RuntimeException $exception) {
+                    var_dump(
+                        'Error retrieving commits for ' . $config->github_organization . '/' . $repository,
+                        $exception->getMessage(),
+                    );
+                }
+            }
+
+            // Append commits from open pull requests for this repository (these are not present in the default branch).
+            if (array_key_exists($repository, $repositoriesWithPullRequests)) {
+                $dateFrom = $config->dateFrom->clone()->setTime(0, 0, 0);
+                $dateTo = $config->dateTo->clone()->setTime(23, 59, 59);
+
+                foreach ($repositoriesWithPullRequests[$repository] as $pullRequest) {
+                    foreach ($pullRequest['commits']['nodes'] as $commit) {
+                        $dateCommit = $config->createCarbon($commit['commit']['committedDate']);
+
+                        if (
+                            $dateFrom->lte($dateCommit)
+                            && $dateTo->gte($dateCommit)
+                            && $commit['commit']['author']['user']['login'] === $config->github_user
+                        ) {
+                            $commit['pull_number'] = $pullRequest['number'];
+                            $commit['pull_url'] = $pullRequest['url'];
+
+                            // GraphQL response structure not the same as the REST response, so we populate some fields.
+                            $commit['author']['html_url'] = $commit['commit']['author']['user']['url'];
+                            $commit['commit']['author']['date'] = $commit['commit']['authoredDate'];
+                            $commit['commit']['author']['name'] = $commit['commit']['author']['user']['name'];
+                            $commit['commit']['committer']['date'] = $commit['commit']['committedDate'];
+                            $commit['html_url'] = $commit['url'];
+
+                            $commitList[] = $commit;
+                        }
+                    }
+                }
             }
 
             if (empty($commitList)) {
@@ -192,7 +232,7 @@ switch ($config->view) {
                 $res[$sortKey] = '
                         <form action="/tmetric.php" method="post" target="_blank">
                             <td>' . implode('</td><td>', [
-                        '<a href="' . $commit['committer']['html_url'] . '" target="_blank">' . $commit['commit']['committer']['name'] . '</a>',
+                        '<a href="' . $commit['author']['html_url'] . '" target="_blank">' . $commit['commit']['author']['name'] . '</a>',
                         implode('<br>', array_filter([
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('D, d M Y') . '</span>',
                             '<a href="https://github.com/' . $config->github_user . '?tab=overview&from=' . $dateCommit->format(
@@ -205,7 +245,10 @@ switch ($config->view) {
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('H:i') . '</span>',
                             $dateCommit->format('H:i'),
                         ])),
-                        '<a href="' . $repositoryUrl . '" target="_blank">' . $repository . '</a>',
+                        implode(' - ', array_filter([
+                            '<a href="' . $repositoryUrl . '" target="_blank">' . $repository . '</a>',
+                            isset($commit['pull_url']) ? '<a href="' . $commit['pull_url'] . '" target="_blank"><strong>#' . $commit['pull_number'] . '</strong></a>' : null,
+                        ])),
                         '<a href="' . $commit['html_url'] . '" target="_blank">' . htmlentities(
                             $commit['commit']['message'],
                         ) . '</a>',
