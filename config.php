@@ -78,6 +78,18 @@ class Config
           totalCount
         }
       }
+    },
+    pullRequests(
+      first:100,
+      states: OPEN
+    ) {
+      nodes {
+        number,
+        repository {
+          name,
+          url
+        }
+      }
     }
   }
 }

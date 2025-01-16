@@ -105,9 +105,17 @@ switch ($config->view) {
         $graphQL = new Github\Api\GraphQL($config->getGithubClient());
         $results = $graphQL->execute($config->getContributionsQuery());
 
+        var_dump($results);
+        die;
+
         $repositories = [];
+        $repositoriesWithPulls = [];
         foreach ($results['data']['user']['contributionsCollection']['commitContributionsByRepository'] as $contribution) {
             $repositories[$contribution['repository']['url']] = $contribution['repository']['name'];
+        }
+        foreach ($results['data']['user']['pullRequests']['nodes'] as $pullRequest) {
+            $repositories[$pullRequest['repository']['url']] = $pullRequest['repository']['name'];
+            $repositoriesWithPulls[$pullRequest['repository']['name']][] = $pullRequest['number'];
         }
         $projects = $config->getTMetricProjects();
 
@@ -129,6 +137,31 @@ switch ($config->view) {
                     ),
                 );
                 continue;
+            }
+
+            // Here we inject commits from open PRs into the list of commits merged into the default branch.
+            if (array_key_exists($repository, $repositoriesWithPulls)) {
+                $dateFrom = $config->dateFrom->clone()->setTime(0, 0, 0);
+                $dateTo = $config->dateTo->clone()->setTime(23, 59, 59);
+
+                foreach ($repositoriesWithPulls[$repository] as $pullNumber) {
+                    $pullRequest = new Github\Api\PullRequest($config->getGithubClient());
+                    $pullCommitList = $pullRequest->commits($config->github_organization, $repository, $pullNumber, [
+                        'per_page' => 100, // max 100
+                        'page'     => 1,
+                    ]);
+
+                    foreach ($pullCommitList as $pullCommit) {
+                        $dateCommit = $config->createCarbon($pullCommit['commit']['committer']['date']);
+
+                        if ($dateFrom->lte($dateCommit) && $dateTo->gte($dateCommit)) {
+                            $pullCommit['pull_number'] = $pullNumber;
+                            $pullCommit['pull_url'] = explode('/commit/', $pullCommit['html_url'])[0] . '/pull/' . $pullNumber;
+
+                            $commitList[] = $pullCommit;
+                        }
+                    }
+                }
             }
 
             if (empty($commitList)) {
@@ -205,7 +238,10 @@ switch ($config->view) {
                             $sameDates ? '' : '<span class="gray-text">' . $dateAuth->format('H:i') . '</span>',
                             $dateCommit->format('H:i'),
                         ])),
-                        '<a href="' . $repositoryUrl . '" target="_blank">' . $repository . '</a>',
+                        implode(' - ', array_filter([
+                            '<a href="' . $repositoryUrl . '" target="_blank">' . $repository . '</a>',
+                            isset($commit['pull_url']) ? '<a href="' . $commit['pull_url'] . '" target="_blank"><strong>#' . $commit['pull_number'] . '</strong></a>' : null,
+                        ])),
                         '<a href="' . $commit['html_url'] . '" target="_blank">' . htmlentities(
                             $commit['commit']['message'],
                         ) . '</a>',
