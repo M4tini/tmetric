@@ -105,60 +105,67 @@ switch ($config->view) {
         $graphQL = new Github\Api\GraphQL($config->getGithubClient());
         $results = $graphQL->execute($config->getContributionsQuery());
 
-        var_dump($results);
-        die;
-
         $repositories = [];
-        $repositoriesWithPulls = [];
+        $repositoriesWithContributions = [];
+        $repositoriesWithPullRequests = [];
         foreach ($results['data']['user']['contributionsCollection']['commitContributionsByRepository'] as $contribution) {
             $repositories[$contribution['repository']['url']] = $contribution['repository']['name'];
+            $repositoriesWithContributions[$contribution['repository']['name']][] = $contribution;
         }
         foreach ($results['data']['user']['pullRequests']['nodes'] as $pullRequest) {
             $repositories[$pullRequest['repository']['url']] = $pullRequest['repository']['name'];
-            $repositoriesWithPulls[$pullRequest['repository']['name']][] = $pullRequest['number'];
+            $repositoriesWithPullRequests[$pullRequest['repository']['name']][] = $pullRequest;
         }
         $projects = $config->getTMetricProjects();
 
         $res = [];
         foreach ($repositories as $repositoryUrl => $repository) {
-            $commits = new Github\Api\Repository\Commits($config->getGithubClient());
+            $commitList = [];
 
-            try {
-                $commitList = $commits->all($config->github_organization, $repository, [
-                    'author'   => $config->github_user,
-                    'per_page' => 100, // max 100
-                    'page'     => 1,
-                    'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
-                    'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
-                ]);
-            } catch (Github\Exception\RuntimeException $exception) {
-                var_dump(
-                    'Error retrieving commits for ' . $config->github_organization . '/' . $repository . ' - ' . $exception->getMessage(
-                    ),
-                );
-                continue;
+            // Overwrite the empty commit list with commits made to the default branch of this repository.
+            if (array_key_exists($repository, $repositoriesWithContributions)) {
+                try {
+                    $commits = new Github\Api\Repository\Commits($config->getGithubClient());
+                    $commitList = $commits->all($config->github_organization, $repository, [
+                        'author'   => $config->github_user,
+                        'per_page' => 100, // max 100
+                        'page'     => 1,
+                        'since'    => $config->dateFrom->clone()->setTime(0, 0, 0)->format(DateTimeInterface::ATOM),
+                        'until'    => $config->dateTo->clone()->setTime(23, 59, 59)->format(DateTimeInterface::ATOM),
+                    ]);
+                } catch (Github\Exception\RuntimeException $exception) {
+                    var_dump(
+                        'Error retrieving commits for ' . $config->github_organization . '/' . $repository,
+                        $exception->getMessage(),
+                    );
+                }
             }
 
-            // Here we inject commits from open PRs into the list of commits merged into the default branch.
-            if (array_key_exists($repository, $repositoriesWithPulls)) {
+            // Append commits from open pull requests for this repository (these are not present in the default branch).
+            if (array_key_exists($repository, $repositoriesWithPullRequests)) {
                 $dateFrom = $config->dateFrom->clone()->setTime(0, 0, 0);
                 $dateTo = $config->dateTo->clone()->setTime(23, 59, 59);
 
-                foreach ($repositoriesWithPulls[$repository] as $pullNumber) {
-                    $pullRequest = new Github\Api\PullRequest($config->getGithubClient());
-                    $pullCommitList = $pullRequest->commits($config->github_organization, $repository, $pullNumber, [
-                        'per_page' => 100, // max 100
-                        'page'     => 1,
-                    ]);
+                foreach ($repositoriesWithPullRequests[$repository] as $pullRequest) {
+                    foreach ($pullRequest['commits']['nodes'] as $commit) {
+                        $dateCommit = $config->createCarbon($commit['commit']['committedDate']);
 
-                    foreach ($pullCommitList as $pullCommit) {
-                        $dateCommit = $config->createCarbon($pullCommit['commit']['committer']['date']);
+                        if (
+                            $dateFrom->lte($dateCommit)
+                            && $dateTo->gte($dateCommit)
+                            && $commit['commit']['committer']['user']['login'] === $config->github_user
+                        ) {
+                            $commit['pull_number'] = $pullRequest['number'];
+                            $commit['pull_url'] = $pullRequest['url'];
 
-                        if ($dateFrom->lte($dateCommit) && $dateTo->gte($dateCommit)) {
-                            $pullCommit['pull_number'] = $pullNumber;
-                            $pullCommit['pull_url'] = explode('/commit/', $pullCommit['html_url'])[0] . '/pull/' . $pullNumber;
+                            // GraphQL response structure not the same as the REST response, so we populate some fields.
+                            $commit['commit']['author']['date'] = $commit['commit']['authoredDate'];
+                            $commit['commit']['committer']['date'] = $commit['commit']['committedDate'];
+                            $commit['committer']['html_url'] = $commit['commit']['committer']['user']['url'];
+                            $commit['commit']['committer']['name'] = $commit['commit']['committer']['user']['name'];
+                            $commit['html_url'] = $commit['url'];
 
-                            $commitList[] = $pullCommit;
+                            $commitList[] = $commit;
                         }
                     }
                 }
