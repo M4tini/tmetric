@@ -175,6 +175,7 @@ GRAPHQL;
             128000 => 'Yoan-Alexander Grigorov',
             217331 => 'Nick Zwaans',
             372173 => 'Yoeri Walstra',
+            437108 => 'Daniel Verner',
         ];
     }
 
