@@ -49,6 +49,6 @@ The default length of a proposed time entry is 1 hour, defined by the interval `
 
 ## References
 
+- https://docs.github.com/en/graphql
 - https://docs.github.com/en/rest
-- https://app.tmetric.com/help/index.html
-- https://tmetric.com/help/data-integrations/how-to-use-tmetric-rest-api
+- https://app.tmetric.com/api-docs/
